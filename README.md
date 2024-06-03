@@ -1,4 +1,4 @@
-![Build status](https://github.com/PuzzArt/contracts/actions/workflows/ci.yml/badge.svg?branch=master)
+![Build status](https://github.com/PuzzArt/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
 [![Coverage Status](https://coveralls.io/repos/github/PuzzArt/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/PuzzArt/contracts)
 
 # PuzzArt contracts
