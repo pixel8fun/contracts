@@ -1,0 +1,32 @@
+{
+  "name": "@puzzart/contracts",
+  "private": true,
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "prepare": "forge install && git submodule update --init --recursive && husky",
+    "compile": "forge build --sizes",
+    "tests": "forge test",
+    "tests-coverage": "forge coverage --report lcov",
+    "view-coverage": "genhtml -o ./coverage lcov.info && open coverage/index.html",
+    "devnet": "anvil --chain-id 1337",
+    "commitlint": "commitlint --edit",
+    "deploy-local": "LOCAL=true forge script scripts/Deploy.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
+    "enable-trading-local": "LOCAL=true forge script scripts/EnableTrading.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
+    "deploy-public": "LOCAL=false forge script scripts/Deploy.s.sol --chain-id $CHAIN_ID --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast",
+    "enable-trading-public": "LOCAL=false forge script scripts/EnableTrading.s.sol --chain-id $CHAIN_ID --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast",
+    "verify-contracts": "bun ./scripts/verify-contracts.ts"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@commitlint/cli": "^18.6.1",
+    "@commitlint/config-conventional": "^18.6.2",
+    "bun": "^1.1.2",
+    "husky": "^9.0.11"
+  }
+}
