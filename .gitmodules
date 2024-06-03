@@ -7,3 +7,5 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
+	branch = main
+	commit = 1116070fe7dc2200e6696d0047cdf7b22acff137
