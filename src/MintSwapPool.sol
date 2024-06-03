@@ -35,7 +35,7 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   /**
    * @dev Wheter trading is enabled or not.
    */
-  bool public enabled = false;
+  bool public enabled = true;
 
   // Constructor
 

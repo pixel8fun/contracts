@@ -11,7 +11,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_DefaultConfig() public {
     assertEq(address(pool.nft()), puzzArt_addr);
     assertEq(pool.owner(), owner1, "owner");
-    assertEq(pool.enabled(), false, "enabled");
+    assertEq(pool.enabled(), true, "enabled");
     
     (PoolCurve memory c, PoolStatus memory s) = pool.getCurveStatus();
     assertEq(c.mintStartId, 10);

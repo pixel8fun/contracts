@@ -3,6 +3,7 @@
   "private": true,
   "module": "index.ts",
   "type": "module",
+  "author": "v42 Labs <dev@v42.space>",
   "scripts": {
     "prepare": "forge install && git submodule update --init --recursive && husky",
     "compile": "forge build --sizes",

@@ -9,13 +9,6 @@ import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "src/Comm
 import { FixedPointMathLib } from "solmate/utils/FixedPointMathLib.sol";
 
 contract MintSwapPoolTrading is MintSwapPoolTestBase {
-  function setUp() virtual public override {
-    super.setUp();
-    
-    vm.prank(owner1);
-    pool.setEnabled(true);
-  }
-
   using FixedPointMathLib for uint256;
 
   // getTotalNftsForSale - initial
