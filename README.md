@@ -96,29 +96,20 @@ Then run:
 $ bun deploy-local
 ```
 
-### Public (testnets, mainnets)
+### Public testnet: Base sepolia
 
 Set the following environment variables:
 
 ```shell
-$ export PRIVATE_KEY="0x..."
-$ export RPC_URL="http://..."
-$ export CHAIN_ID="..."
+$ export PRIVATE_KEY="0x..." # testnet deployer wallet (see 1password)
+$ export VERIFIER_API_KEY="..." # basescan.org api key (see 1password)
 ```
 
 Then run:
 
 ```shell
-$ bun deploy-public
-```
-
-To verify contracts on the public chain:
-
-```shell
-$ export CHAIN_ID="..."
-$ export VERIFIER_API_KEY="..." # for blastscan/etc.
-$ export VERIFIER_URL="..." # e.g https://api.blastscan.io/api
-$ bun verify-contracts
+$ bun deploy-testnet
+$ bun verify-testnet
 ```
 
 ## License
