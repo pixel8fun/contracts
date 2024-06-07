@@ -6,8 +6,8 @@ import { LotteryNftTestBase } from "./LotteryNftTestBase.sol";
 
 contract LotteryNftBasic is LotteryNftTestBase {
   function test_DefaultConfig() public {
-    assertEq(lotteryNft.name(), "PuzzArt Lottery", "name");
-    assertEq(lotteryNft.symbol(), "PUZZART_LOTTERY", "symbol");
+    assertEq(lotteryNft.name(), "Pixel8 Lottery", "name");
+    assertEq(lotteryNft.symbol(), "PIXEL8_LOTTERY", "symbol");
     assertEq(lotteryNft.minter(), minter1, "minter");
     assertEq(lotteryNft.defaultImage(), "img", "defaultImg");
 

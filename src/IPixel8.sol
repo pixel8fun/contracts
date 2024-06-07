@@ -4,11 +4,11 @@ pragma solidity ^0.8.24;
 import { IERC721 } from "openzeppelin/token/ERC721/IERC721.sol";
 
 /**
- * @dev PuzzArt NFT.
+ * @dev Pixel8 NFT.
  *
  * All mutations should be protected such that only the pool can call them.
  */
-interface IPuzzArt is IERC721 {
+interface IPixel8 is IERC721 {
   /**
    * @dev Batch mint tokens to the address.
    *

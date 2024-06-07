@@ -39,7 +39,7 @@ contract LotteryNFT is ERC721, ERC2981, ILotteryNFT, BlastOwnable {
   /**
    * @dev Constructor.
    */
-  constructor(Config memory _config) ERC721("PuzzArt Lottery", "PUZZART_LOTTERY") BlastOwnable(_config.owner) {
+  constructor(Config memory _config) ERC721("Pixel8 Lottery", "PIXEL8_LOTTERY") BlastOwnable(_config.owner) {
     minter = _config.minter;
     defaultImage = _config.defaultImage;
     _setDefaultRoyalty(_config.royaltyReceiver, _config.royaltyFeeBips);
@@ -62,7 +62,7 @@ contract LotteryNFT is ERC721, ERC2981, ILotteryNFT, BlastOwnable {
       abi.encodePacked(
         '{',
             '"name": "Lottery ticket",',
-            '"description": "A lottery ticket for the PuzzArt NFT collection - see https://puzz.art for more info.",',
+            '"description": "A lottery ticket for the Pixel8 NFT collection - see https://pixel8.art for more info.",',
             '"image": "', defaultImage, '"',
         '}'
       ) 

@@ -8,7 +8,7 @@ import { IERC721Metadata } from "openzeppelin/token/ERC721/extensions/IERC721Met
 import { IERC721Errors } from "./IERC721Errors.sol";
 
 /*
-  Custom ERC721 contract for PuzzArt NFT.
+  Custom ERC721 contract for Pixel8 NFT.
 
   Based on ERC721.sol from https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol
   @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol)

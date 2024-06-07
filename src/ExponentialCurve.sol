@@ -5,7 +5,7 @@ import { QuoteError, BuyQuote, SellQuote } from "./Common.sol";
 import { FixedPointMathLib } from "solmate/utils/FixedPointMathLib.sol";
 
 /*
-    Bonding curve for PuzzArt pool.
+    Bonding curve for Pixel8 pool.
 
     Based on ExponentialCurve.sol from SudoSwap.
     @author 0xmons and boredGenius

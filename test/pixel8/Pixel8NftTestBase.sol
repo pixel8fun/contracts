@@ -3,12 +3,12 @@ pragma solidity ^0.8.24;
 
 import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Strings } from "openzeppelin/utils/Strings.sol";
-import { PuzzArt } from "src/PuzzArt.sol";  
+import { Pixel8 } from "src/Pixel8.sol";  
 import { LotteryNFT } from "src/LotteryNFT.sol";
 import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 
-abstract contract PuzzArtNftTestBase is TestBase01 {  
+abstract contract Pixel8NftTestBase is TestBase01 {  
   using Strings for uint256;
 
   uint pool1_key = 0x123456;
@@ -21,8 +21,8 @@ abstract contract PuzzArtNftTestBase is TestBase01 {
       abi.encodePacked(
         '{',
             '"name": "Unrevealed tile",',
-            '"description": "An unrevealed PuzzArt tile - see https://puzz.art for more info.",',
-            '"image": "', puzzArt.defaultImage(), '"',
+            '"description": "An unrevealed Pixel8 tile - see https://pixel8.art for more info.",',
+            '"image": "', pixel8.defaultImage(), '"',
         '}'
       ) 
     );
@@ -30,6 +30,6 @@ abstract contract PuzzArtNftTestBase is TestBase01 {
     return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
   }
 
-  function testPuzzArtNftTestBase_ExcludeFromCoverage() public {}  
+  function testPixel8NftTestBase_ExcludeFromCoverage() public {}  
 }
 

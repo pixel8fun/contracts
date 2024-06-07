@@ -1,9 +1,9 @@
-![Build status](https://github.com/PuzzArt/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/PuzzArt/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/PuzzArt/contracts)
+![Build status](https://github.com/pixel8xyz/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/pixel8xyz/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8xyz/contracts)
 
-# PuzzArt contracts
+# Pixel8 contracts
 
-Smart contracts for [PuzzArt](https://puzz.art).
+Smart contracts for [Pixel8](https://pixel8.art).
 
 Features:
 
@@ -30,7 +30,7 @@ Technicals details:
 * ERC2981 royalty standard.
 * ERC4906 metadata updates.
 * ECDSA signature verification to allow for anyone to mint/reveal with authorisation.
-* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/PuzzArt/contracts).
+* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/pixel8xyz/contracts).
 
 ## On-chain addresses
 
@@ -116,7 +116,7 @@ $ bun verify-testnet
 
 AGPLv3 - see [LICENSE.md](LICENSE.md)
 
-PuzzArt smart contracts
+Pixel8 smart contracts
 Copyright (C) 2024  [v42 Labs](https://v42.space)
 
 This program is free software: you can redistribute it and/or modify
