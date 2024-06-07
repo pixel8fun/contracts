@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { console as c } from "forge-std/Script.sol";
 import { ScriptBase } from "./ScriptBase.sol";
-import { PuzzArt } from "src/PuzzArt.sol";
+import { Pixel8 } from "src/Pixel8.sol";
 import { LotteryNFT } from "src/LotteryNFT.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
 
@@ -16,25 +16,25 @@ contract Deploy is ScriptBase {
 
     vm.startBroadcast(wallet);
 
-    c.log("Deploying PuzzArt...");
+    c.log("Deploying Pixel8...");
 
-    PuzzArt.Config memory puzzArtConfig = _getPuzzArtConfig(cfg);
-    c.log("PuzzArt constructor args:");
-    c.logBytes(abi.encode(puzzArtConfig));
+    Pixel8.Config memory pixel8Config = _getPixel8Config(cfg);
+    c.log("Pixel8 constructor args:");
+    c.logBytes(abi.encode(pixel8Config));
 
-    PuzzArt puzzArt;
-    address payable puzzArtAddress = _getDeployedAddress(type(PuzzArt).creationCode, abi.encode(puzzArtConfig));
-    if (puzzArtAddress.code.length > 0) {
-      c.log("PuzzArt already deployed at:", puzzArtAddress);
-      puzzArt = PuzzArt(puzzArtAddress);
+    Pixel8 pixel8;
+    address payable pixel8Address = _getDeployedAddress(type(Pixel8).creationCode, abi.encode(pixel8Config));
+    if (pixel8Address.code.length > 0) {
+      c.log("Pixel8 already deployed at:", pixel8Address);
+      pixel8 = Pixel8(pixel8Address);
     } else {
-      puzzArt = new PuzzArt{salt: CREATE2_SALT}(puzzArtConfig);
-      c.log("PuzzArt:", address(puzzArt));
+      pixel8 = new Pixel8{salt: CREATE2_SALT}(pixel8Config);
+      c.log("Pixel8:", address(pixel8));
     }
     
     c.log("Deploying LotteryNFT...");
 
-    LotteryNFT.Config memory lotteryNftConfig = _getLotteryNftConfig(cfg, puzzArtAddress);
+    LotteryNFT.Config memory lotteryNftConfig = _getLotteryNftConfig(cfg, pixel8Address);
     c.log("LotteryNFT constructor args:");
     c.logBytes(abi.encode(lotteryNftConfig));
 
@@ -50,7 +50,7 @@ contract Deploy is ScriptBase {
 
     c.log("Deploying MintSwapPool...");
 
-    MintSwapPool.Config memory poolConfig = _getMintSwapPoolConfig(cfg, puzzArtAddress);
+    MintSwapPool.Config memory poolConfig = _getMintSwapPoolConfig(cfg, pixel8Address);
     c.log("MintSwapPool constructor args:");
     c.logBytes(abi.encode(poolConfig));
 
@@ -64,20 +64,20 @@ contract Deploy is ScriptBase {
       c.log("MintSwapPool:", poolAddress);
     }
 
-    address currentPool = puzzArt.pool();
+    address currentPool = pixel8.pool();
     if (currentPool != poolAddress) {
-      c.log("Enable pool on PuzzArt contract...");
-      puzzArt.setPool(poolAddress);
+      c.log("Enable pool on Pixel8 contract...");
+      pixel8.setPool(poolAddress);
     } else {
-      c.log("Pool already enabled on PuzzArt contract...");    
+      c.log("Pool already enabled on Pixel8 contract...");    
     }
 
-    address currentLottery = address(puzzArt.getLottery().nft);
+    address currentLottery = address(pixel8.getLottery().nft);
     if (currentLottery != lotteryNftAddress) {
-      c.log("Enable lottery on PuzzArt contract...");
-      puzzArt.setLotteryNFT(lotteryNftAddress);
+      c.log("Enable lottery on Pixel8 contract...");
+      pixel8.setLotteryNFT(lotteryNftAddress);
     } else {
-      c.log("Lottery already enabled on PuzzArt contract...");    
+      c.log("Lottery already enabled on Pixel8 contract...");    
     }
 
     c.log("All done");

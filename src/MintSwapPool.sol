@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
-import { IPuzzArt } from "./IPuzzArt.sol";
+import { IPixel8 } from "./IPixel8.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "./Common.sol";
 import { ExponentialCurve } from "./ExponentialCurve.sol";
@@ -28,7 +28,7 @@ import { BlastOwnable } from "./BlastOwnable.sol";
  * has access to its own liquidity.
  */
 contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
-  IPuzzArt public nft;
+  IPixel8 public nft;
   PoolCurve public curve;
   PoolStatus public status;
 
@@ -45,7 +45,7 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   struct Config {
     /** Owner of pool */
     address owner;
-    /** PuzzArt contractx. */
+    /** Pixel8 contractx. */
     address nft;
     /** Price curves (and thus liquidity pools) */
     PoolCurve curve;
@@ -64,7 +64,7 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
       revert LibErrors.InvalidMintEndId(_config.curve.mintEndId);
     }
 
-    nft = IPuzzArt(_config.nft);
+    nft = IPixel8(_config.nft);
     
     curve = _config.curve;
     

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Strings } from "openzeppelin/utils/Strings.sol";
-import { PuzzArt } from "src/PuzzArt.sol";  
+import { Pixel8 } from "src/Pixel8.sol";  
 import { LotteryNFT } from "src/LotteryNFT.sol";
 import { ERC721, IERC721TokenReceiver } from "src/ERC721.sol";
 import { Auth } from "src/Auth.sol";
@@ -13,7 +13,7 @@ abstract contract LotteryNftTestBase is TestBase01 {
   using Strings for uint256;
 
   function setUp() virtual public override {
-    lotteryNft = new LotteryNFT(_getDefaultLotteryNftConfig(PuzzArt(minter1)));
+    lotteryNft = new LotteryNFT(_getDefaultLotteryNftConfig(Pixel8(minter1)));
     lotteryNft_addr = address(lotteryNft);
   }
 
@@ -24,7 +24,7 @@ abstract contract LotteryNftTestBase is TestBase01 {
       abi.encodePacked(
         '{',
             '"name": "Lottery ticket",',
-            '"description": "A lottery ticket for the PuzzArt NFT collection - see https://puzz.art for more info.",',
+            '"description": "A lottery ticket for the Pixel8 NFT collection - see https://pixel8.art for more info.",',
             '"image": "', lotteryNft.defaultImage(), '"',
         '}'
       ) 
@@ -33,7 +33,7 @@ abstract contract LotteryNftTestBase is TestBase01 {
     return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
   }
 
-  function testPuzzArtNftTestBase_ExcludeFromCoverage() public {}  
+  function testPixel8NftTestBase_ExcludeFromCoverage() public {}  
 }
 
 

@@ -4,18 +4,18 @@ pragma solidity ^0.8.24;
 
 import {console2 as c} from "forge-std/Test.sol";
 import { Vm } from "forge-std/Vm.sol";
-import { PuzzArtNftTestBase } from "./PuzzArtNftTestBase.sol";
+import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
 import { Auth } from "src/Auth.sol";
-import { PuzzArt } from "src/PuzzArt.sol";
+import { Pixel8 } from "src/Pixel8.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
+contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
 
     vm.startPrank(owner1);
-    puzzArt.setLotteryNFT(lotteryNft_addr);
+    pixel8.setLotteryNFT(lotteryNft_addr);
     vm.stopPrank();
   }
 
@@ -24,37 +24,37 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     string memory uri = "";
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
 
-    assertEq(puzzArt.ownerOf(2), wallet1);
-    assertEq(puzzArt.totalSupply(), 1);
-    assertEq(puzzArt.balanceOf(wallet1), 1);
-    assertEq(puzzArt.tokenByIndex(0), 2);
-    assertEq(puzzArt.tokenOfOwnerByIndex(wallet1, 0), 2);
-    assertEq(puzzArt.tokenURI(2), _buildDefaultTokenUri(2));
+    assertEq(pixel8.ownerOf(2), wallet1);
+    assertEq(pixel8.totalSupply(), 1);
+    assertEq(pixel8.balanceOf(wallet1), 1);
+    assertEq(pixel8.tokenByIndex(0), 2);
+    assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 0), 2);
+    assertEq(pixel8.tokenURI(2), _buildDefaultTokenUri(2));
 
     id = 3;
     uri = "uri3";
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
 
-    assertEq(puzzArt.ownerOf(3), wallet1);
-    assertEq(puzzArt.totalSupply(), 2);
-    assertEq(puzzArt.balanceOf(wallet1), 2);
-    assertEq(puzzArt.tokenByIndex(1), 3);
-    assertEq(puzzArt.tokenOfOwnerByIndex(wallet1, 1), 3);
-    assertEq(puzzArt.tokenURI(3), "uri3");
+    assertEq(pixel8.ownerOf(3), wallet1);
+    assertEq(pixel8.totalSupply(), 2);
+    assertEq(pixel8.balanceOf(wallet1), 2);
+    assertEq(pixel8.tokenByIndex(1), 3);
+    assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 1), 3);
+    assertEq(pixel8.tokenURI(3), "uri3");
   }
 
   function test_MintWithMinterAuthorisation_EmitsEvent() public {
     vm.recordLogs();
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, 1, "uri", 4);
+    _pixel8_mint(wallet1, 1, "uri", 4);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    // 1 puzzart mint + 1 metadata update + 4 lottery mints
+    // 1 pixel8 mint + 1 metadata update + 4 lottery mints
     assertEq(entries.length, 6, "Invalid entry count");
     assertEq(entries[1].topics.length, 1, "Invalid event count");
     assertEq(
@@ -71,14 +71,14 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     string memory uri = "";
 
     vm.prank(wallet2);
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
 
-    assertEq(puzzArt.ownerOf(2), wallet1);
-    assertEq(puzzArt.totalSupply(), 1);
-    assertEq(puzzArt.balanceOf(wallet1), 1);
-    assertEq(puzzArt.tokenByIndex(0), 2);
-    assertEq(puzzArt.tokenOfOwnerByIndex(wallet1, 0), 2);
-    assertEq(puzzArt.tokenURI(2), _buildDefaultTokenUri(2));
+    assertEq(pixel8.ownerOf(2), wallet1);
+    assertEq(pixel8.totalSupply(), 1);
+    assertEq(pixel8.balanceOf(wallet1), 1);
+    assertEq(pixel8.tokenByIndex(0), 2);
+    assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 0), 2);
+    assertEq(pixel8.tokenURI(2), _buildDefaultTokenUri(2));
   }
 
   function test_MintWithMinterAuthorisation_AwardsLotteryTickets() public {
@@ -86,13 +86,13 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     string memory uri = "";
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 4);
+    _pixel8_mint(wallet1, id, uri, 4);
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id + 1, uri, 5);
+    _pixel8_mint(wallet1, id + 1, uri, 5);
 
     vm.prank(wallet2);
-    _puzzArt_mint(wallet2, id + 2, uri, 0);
+    _pixel8_mint(wallet2, id + 2, uri, 0);
 
     assertEq(lotteryNft.balanceOf(wallet1), 9); 
     assertEq(lotteryNft.balanceOf(wallet2), 0);
@@ -105,15 +105,15 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     vm.recordLogs();
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 4);
+    _pixel8_mint(wallet1, id, uri, 4);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
 
-    assertEq(puzzArt.tokenURI(1), "uri", "token uri");
-    assertEq(puzzArt.revealed(1), true, "revealed state");
-    assertEq(puzzArt.numRevealed(), 1, "revealed count");
+    assertEq(pixel8.tokenURI(1), "uri", "token uri");
+    assertEq(pixel8.revealed(1), true, "revealed state");
+    assertEq(pixel8.numRevealed(), 1, "revealed count");
 
-    // Mint puzzart -> Set metadata -> 4 x Mint lottery
+    // Mint pixel8 -> Set metadata -> 4 x Mint lottery
     assertEq(entries.length, 6, "Invalid entry count");
     assertEq(entries[1].topics.length, 1, "Invalid event count");
     assertEq(
@@ -131,7 +131,7 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, wallet1));
-    puzzArt.mint(PuzzArt.MintRevealParams({
+    pixel8.mint(Pixel8.MintRevealParams({
       wallet: wallet1,
       tokenId: id,
       uri: uri,
@@ -154,7 +154,7 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, wallet1));
-    puzzArt.mint(PuzzArt.MintRevealParams({
+    pixel8.mint(Pixel8.MintRevealParams({
       wallet: wallet1,
       tokenId: id,
       uri: uri,
@@ -169,7 +169,7 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureExpired.selector, wallet1));
-    puzzArt.mint(PuzzArt.MintRevealParams({
+    pixel8.mint(Pixel8.MintRevealParams({
       wallet: wallet1,
       tokenId: id,
       uri: uri,
@@ -186,11 +186,11 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     string memory uri = "";
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureAlreadyUsed.selector, wallet1));
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
   }
 
   function test_MintAlreadyMintedToken_Fails() public {
@@ -198,12 +198,12 @@ contract PuzzArtNftMintingByMinter is PuzzArtNftTestBase {
     string memory uri = "";
 
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
 
     uri = "uri2";
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721TokenAlreadyMinted.selector, 1));
-    _puzzArt_mint(wallet1, id, uri, 1);
+    _pixel8_mint(wallet1, id, uri, 1);
   }
 }

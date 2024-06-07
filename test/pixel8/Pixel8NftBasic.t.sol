@@ -2,23 +2,23 @@
 pragma solidity ^0.8.24;
 
 import { Ownable } from "openzeppelin/access/Ownable.sol";
-import { PuzzArt } from "src/PuzzArt.sol";
-import { PuzzArtNftTestBase } from "./PuzzArtNftTestBase.sol";
+import { Pixel8 } from "src/Pixel8.sol";
+import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
 
-contract PuzzArtNftBasic is PuzzArtNftTestBase {
+contract Pixel8NftBasic is Pixel8NftTestBase {
   function test_DefaultConfig() public {
-    assertEq(puzzArt.name(), "PuzzArt", "name");
-    assertEq(puzzArt.symbol(), "PUZZART", "symbol");
-    assertEq(puzzArt.owner(), owner1, "owner");
-    assertEq(puzzArt.minter(), minter1, "minter");
-    assertEq(puzzArt.pool(), address(0), "pool");
-    assertEq(puzzArt.defaultImage(), "img", "defaultImg");
+    assertEq(pixel8.name(), "Pixel8", "name");
+    assertEq(pixel8.symbol(), "PIXEL8", "symbol");
+    assertEq(pixel8.owner(), owner1, "owner");
+    assertEq(pixel8.minter(), minter1, "minter");
+    assertEq(pixel8.pool(), address(0), "pool");
+    assertEq(pixel8.defaultImage(), "img", "defaultImg");
 
-    PuzzArt.DevRoyalties memory devRoyalties = puzzArt.getDevRoyalties();
+    Pixel8.DevRoyalties memory devRoyalties = pixel8.getDevRoyalties();
     assertEq(devRoyalties.feeBips, 1000, "devRoyalties.feeBips");
     assertEq(devRoyalties.receiver, owner1, "devRoyalties.receiver");
 
-    PuzzArt.Lottery memory lottery = puzzArt.getLottery();
+    Pixel8.Lottery memory lottery = pixel8.getLottery();
     assertEq(lottery.feeBips, 1000, "lottery.feeBips");
     assertEq(lottery.deadline, block.timestamp + 10, "lottery.deadline");
     assertEq(lottery.tileRevealThreshold, 10, "lottery.tileRevealThreshold");
@@ -27,26 +27,26 @@ contract PuzzArtNftBasic is PuzzArtNftTestBase {
     assertEq(lottery.numWinningTickets, 0, "lottery.numWinningTickets");
     assertEq(address(lottery.nft), address(0), "lottery.ticketNFT");
 
-    assertEq(puzzArt.getLotteryPot(), 0, "getLotteryPotSoFar");
+    assertEq(pixel8.getLotteryPot(), 0, "getLotteryPotSoFar");
 
-    assertEq(puzzArt.totalSupply(), 0, "totalSupply");
-    (address r1, uint r2) = puzzArt.royaltyInfo(0, 100);
-    assertEq(r1, puzzArt_addr, "royaltyInfo.receiver");
+    assertEq(pixel8.totalSupply(), 0, "totalSupply");
+    (address r1, uint r2) = pixel8.royaltyInfo(0, 100);
+    assertEq(r1, pixel8_addr, "royaltyInfo.receiver");
     assertEq(r2, 20, "royaltyInfo.fee");
 
-    (address rec, uint fee) = puzzArt.getRoyaltyInfo();
-    assertEq(rec, puzzArt_addr, "getRoyaltyInfo.receiver");
+    (address rec, uint fee) = pixel8.getRoyaltyInfo();
+    assertEq(rec, pixel8_addr, "getRoyaltyInfo.receiver");
     assertEq(fee, 2000, "getRoyaltyInfo.fee");
   }
 
   function test_ClaimGasRefunds_WhenOwner() public {
     vm.prank(owner1);
-    puzzArt.claimGasRefunds();
+    pixel8.claimGasRefunds();
   }
 
   function test_ClaimGasRefunds_WhenNotOwner() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, wallet1));
-    puzzArt.claimGasRefunds();
+    pixel8.claimGasRefunds();
   }
 }

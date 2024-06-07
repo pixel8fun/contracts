@@ -581,7 +581,7 @@ contract Erc721Base is TestBase01 {
 
     /*
     The reverse order is due to the fact that the last token is 
-    moved to the position of the token being removed from the lispuzzArt.
+    moved to the position of the token being removed from the lispixel8.
     */
     assertEq(b.tokenOfOwnerByIndex(wallet1, 0), 4);
     assertEq(b.tokenOfOwnerByIndex(wallet1, 1), 3);
@@ -809,7 +809,7 @@ contract Erc721Base is TestBase01 {
 
     /**
     Batch transfer range counts tokens from the end of the list backwards so that the 
-    list order is preserved, i.e. it transfers the most recently received tokens firspuzzArt.
+    list order is preserved, i.e. it transfers the most recently received tokens firspixel8.
     */
     assertEq(b.tokenOfOwnerByIndex(wallet1, 0), 1);
     assertEq(b.tokenOfOwnerByIndex(wallet1, 1), 2);

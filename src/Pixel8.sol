@@ -11,12 +11,12 @@ import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Strings } from "openzeppelin/utils/Strings.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { LibErrors } from "./LibErrors.sol";
-import { IPuzzArt } from "./IPuzzArt.sol";
+import { IPixel8 } from "./IPixel8.sol";
 import { ILotteryNFT } from "./ILotteryNFT.sol";
 import { BlastOwnable } from "./BlastOwnable.sol";
 
 
-contract PuzzArt is Auth, ERC721, ERC2981, IERC4906, IPuzzArt, BlastOwnable {
+contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
   using Strings for uint256;
 
   /**
@@ -134,7 +134,7 @@ contract PuzzArt is Auth, ERC721, ERC2981, IERC4906, IPuzzArt, BlastOwnable {
   /**
    * @dev Constructor.
    */
-  constructor(Config memory _config) ERC721("PuzzArt", "PUZZART") BlastOwnable(_config.owner) {
+  constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") BlastOwnable(_config.owner) {
     minter = _config.minter;
     defaultImage = _config.defaultImage;
 
@@ -180,7 +180,7 @@ contract PuzzArt is Auth, ERC721, ERC2981, IERC4906, IPuzzArt, BlastOwnable {
         abi.encodePacked(
           '{',
               '"name": "Unrevealed tile",',
-              '"description": "An unrevealed PuzzArt tile - see https://puzz.art for more info.",',
+              '"description": "An unrevealed Pixel8 tile - see https://pixel8.art for more info.",',
               '"image": "', defaultImage, '"',
           '}'
         ) 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import { MessageHashUtils } from "lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import { ERC721, IERC721TokenReceiver } from "src/ERC721.sol";
 import { Auth } from "src/Auth.sol";
-import { PuzzArt } from "src/PuzzArt.sol";  
+import { Pixel8 } from "src/Pixel8.sol";  
 import { LotteryNFT } from "src/LotteryNFT.sol";
 
 import {Test, console2 as c} from "forge-std/Test.sol";
@@ -20,8 +20,8 @@ abstract contract TestBase01 is Test {
   address payable wallet1 = payable(address(0x1234567890));
   address payable wallet2 = payable(address(0x1234567890123));
 
-  PuzzArt public puzzArt;
-  address puzzArt_addr;
+  Pixel8 public pixel8;
+  address pixel8_addr;
 
   LotteryNFT public lotteryNft;
   address lotteryNft_addr;
@@ -32,17 +32,17 @@ abstract contract TestBase01 is Test {
   }
 
   function setUp() public virtual {    
-    puzzArt = new PuzzArt(_getDefaultPuzzArtNftConfig());
-    puzzArt_addr = address(puzzArt);
+    pixel8 = new Pixel8(_getDefaultPixel8NftConfig());
+    pixel8_addr = address(pixel8);
 
-    lotteryNft = new LotteryNFT(_getDefaultLotteryNftConfig(puzzArt));
+    lotteryNft = new LotteryNFT(_getDefaultLotteryNftConfig(pixel8));
     lotteryNft_addr = address(lotteryNft);
   }
 
   // Helper methods
 
-  function _getDefaultPuzzArtNftConfig() internal view returns (PuzzArt.Config memory) {
-    return PuzzArt.Config({
+  function _getDefaultPixel8NftConfig() internal view returns (Pixel8.Config memory) {
+    return Pixel8.Config({
       owner: owner1,
       minter: minter1,
       devRoyaltyFeeBips: 1000, /* 1000 bips = 10% */
@@ -54,7 +54,7 @@ abstract contract TestBase01 is Test {
     });
   }  
 
-  function _getDefaultLotteryNftConfig(PuzzArt t) internal view returns (LotteryNFT.Config memory) {
+  function _getDefaultLotteryNftConfig(Pixel8 t) internal view returns (LotteryNFT.Config memory) {
     return LotteryNFT.Config({
       owner: owner1,
       minter: address(t),
@@ -81,8 +81,8 @@ abstract contract TestBase01 is Test {
     });
   }
 
-  function _puzzArt_mint(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
-    PuzzArt.MintRevealParams memory params = PuzzArt.MintRevealParams({
+  function _pixel8_mint(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
+    Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
@@ -93,11 +93,11 @@ abstract contract TestBase01 is Test {
       )
     });
 
-    puzzArt.mint(params);
+    pixel8.mint(params);
   }
 
-  function _puzzArt_reveal(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
-    PuzzArt.MintRevealParams memory params = PuzzArt.MintRevealParams({
+  function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
+    Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
@@ -108,7 +108,7 @@ abstract contract TestBase01 is Test {
       )
     });
 
-    puzzArt.reveal(params);
+    pixel8.reveal(params);
   }
 
   function _toBytes32(address _addr) internal pure returns (bytes32) {

@@ -9,7 +9,7 @@ import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_DefaultConfig() public {
-    assertEq(address(pool.nft()), puzzArt_addr);
+    assertEq(address(pool.nft()), pixel8_addr);
     assertEq(pool.owner(), owner1, "owner");
     assertEq(pool.enabled(), true, "enabled");
     
@@ -39,7 +39,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
 
     pool = new MintSwapPool(MintSwapPool.Config({
       owner: owner1,
-      nft: puzzArt_addr,
+      nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
         mintEndId: 1,
@@ -55,7 +55,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintPrice.selector, price));
     pool = new MintSwapPool(MintSwapPool.Config({
       owner: owner1,
-      nft: puzzArt_addr,
+      nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
         mintEndId: 1,
@@ -71,7 +71,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
 
     pool = new MintSwapPool(MintSwapPool.Config({
       owner: owner1,
-      nft: puzzArt_addr,
+      nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: start,
         mintEndId: end,
@@ -85,7 +85,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintStartId.selector, 0));
     pool = new MintSwapPool(MintSwapPool.Config({
       owner: owner1,
-      nft: puzzArt_addr,
+      nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 0,
         mintEndId: 1,
@@ -97,7 +97,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintEndId.selector, 1));
     pool = new MintSwapPool(MintSwapPool.Config({
       owner: owner1,
-      nft: puzzArt_addr,
+      nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 2,
         mintEndId: 1,

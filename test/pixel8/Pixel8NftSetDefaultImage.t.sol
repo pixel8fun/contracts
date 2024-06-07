@@ -3,32 +3,32 @@ pragma solidity ^0.8.24;
 
 import { Vm } from "forge-std/Vm.sol";
 import { console2 as c } from "forge-std/Test.sol";
-import { PuzzArtNftTestBase } from "./PuzzArtNftTestBase.sol";
+import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 
-contract PuzzArtNftSetDefaultImage is PuzzArtNftTestBase {
+contract Pixel8NftSetDefaultImage is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
 
     vm.startPrank(owner1);
-    puzzArt.setLotteryNFT(lotteryNft_addr);
+    pixel8.setLotteryNFT(lotteryNft_addr);
     vm.stopPrank();
   }
 
   function test_SetDefaultImageWhenOwner_Succeeds() public {
     vm.prank(owner1);
-    puzzArt.setDefaultImage("newImage");
-    assertEq(puzzArt.defaultImage(), "newImage");
+    pixel8.setDefaultImage("newImage");
+    assertEq(pixel8.defaultImage(), "newImage");
   }
 
   function test_SetDefaultImageWhenOwner_EmitsEvent() public {
     vm.prank(wallet1);
-    _puzzArt_mint(wallet1, 1, "uri", 1);
+    _pixel8_mint(wallet1, 1, "uri", 1);
 
     vm.recordLogs();
 
-    vm.prank(puzzArt.owner());
-    puzzArt.setDefaultImage("ten");
+    vm.prank(pixel8.owner());
+    pixel8.setDefaultImage("ten");
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
     assertEq(entries.length, 1, "Invalid entry count");
@@ -46,11 +46,11 @@ contract PuzzArtNftSetDefaultImage is PuzzArtNftTestBase {
   function test_SetDefaultImageWhenNotOwner_Fails() public {
     vm.prank(minter1);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter1));
-    puzzArt.setDefaultImage("newImage");
+    pixel8.setDefaultImage("newImage");
 
     address random = address(0x8876);
     vm.prank(random);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, random));
-    puzzArt.setDefaultImage("newImage");
+    pixel8.setDefaultImage("newImage");
   }
 }
