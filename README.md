@@ -109,6 +109,11 @@ Then run:
 
 ```shell
 $ bun deploy-testnet
+```
+
+Save the new deployed addresses and constructor args into `scripts/verify-contracts.ts` and then run:
+
+```shell
 $ bun verify-testnet
 ```
 

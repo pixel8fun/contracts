@@ -48,7 +48,7 @@ contract ScriptBase is Script {
       defaultImage: DEFAULT_PIXEL8_IMG,
       lotteryPotFeeBips: 500, /* 500 bips = 5% */
       lotteryDeadline: 1735689600, /* 2025-01-01 00:00:00 - keep it fixed so that CREATE2 returns same address each time */
-      lotteryRevealThreshold: 9261 /* level 1 + level 2 + level 3 tiles */
+      lotteryRevealThreshold: 7056 /* level 1 tiles */
     });
   }
 
@@ -67,13 +67,13 @@ contract ScriptBase is Script {
       owner: cfg.owner,
       nft: pixel8Address,
       curve: PoolCurve({
-        mintStartId: 801,
+        mintStartId: 1,
         mintEndId: 7056,
-        startPriceWei: 0.01 ether,
+        startPriceWei: 0.00001 ether,
         /*
-        Delta is equiv. to 1.0007 => increase by 0.07% 
+        Delta is equiv. to 1.001 <=> 0.1% 
         */
-        delta: 1000700000000000000 
+        delta: 1001000000000000000 
       })
     });
   }
