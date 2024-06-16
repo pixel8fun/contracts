@@ -20,25 +20,13 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
   using Strings for uint256;
 
   /**
-   * @dev Lottery info.
+   * @dev Prize pool info.
    */
-  struct Lottery {
-    /** The winners of the lottery. */
-    uint[] winners;
-    /** No. of winning tickets - to be set ahead of time. */
-    uint numWinningTickets;
-    /** The final drawn pot. */
-    uint drawnPot;
-    /** Whether the lottery has been drawn. */
-    bool drawn;
-    /** The deadline for the lottery. */
-    uint deadline;
-    /** The number of tiles that need to be revealed before the lottery can be drawn. */
-    uint tileRevealThreshold;
-    /** The trading fee for the lottery. */
+  struct PrizePool {
+    /** The final pot. */
+    uint pot;
+    /** The trading fee for the prize pool. */
     uint96 feeBips;
-    /** The NFT contract for the lottery tickets. */
-    ILotteryNFT nft;
   }
 
   /**
@@ -58,27 +46,22 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
     address wallet;
     uint256 tokenId;
     string uri;
-    uint256 lotteryTickets;
+    uint256 points;
     Auth.Signature authSig;
   }
 
   /**
-   * @dev Lottery info.
-   */
-  Lottery private lottery;
-
-  /** 
-   * @dev Mapping of lottery winnings claimed (ticket => claimed or not).
-   */
-  mapping(uint => bool) public lotteryWinningsClaimed;
-
-  /**
    * @dev Dev royalties info.
    */
-  DevRoyalties private devRoyalties;
+  DevRoyalties public devRoyalties;
 
   /**
-   * @dev The pool contract.
+   * @dev Prize pool info.
+   */
+  PrizePool public prizePool;
+
+  /**
+   * @dev The liquidity pool contract.
    */
   address public pool;
 
@@ -98,6 +81,16 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
   uint public numRevealed;
 
   /**
+   * @dev The game is over once given on. of tiles have been revealed.
+   */
+  uint public gameOverRevealThreshold;
+
+  /**
+   * @dev Game over.
+   */
+  bool public gameOver;
+
+  /**
    * @dev Mapping of revealed tokens.
    */
   mapping(uint256 => bool) public revealed;
@@ -106,6 +99,38 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    * @dev Per-token metadata.
    */
   mapping(uint256 => string) public tokenMetadata;
+
+  /** 
+   * @dev Whether the prize has been claimed for a given wallet.
+   */
+  mapping(address => bool) public prizeClaimed;
+
+  /**
+   * @dev Game points for each wallet.
+   */
+  mapping(address => uint) public points;
+  /**
+   * @dev The wallets with the highest points.
+   */
+  address[3] public highestPoints;
+
+  /**
+   * @dev The number of force swaps for each wallet.
+   */
+  mapping(address => uint) public numForceSwaps;
+  /**
+   * @dev The wallet with the highest number of force swaps.
+   */
+  address public highestNumForceSwaps;
+
+  /**
+   * @dev The trading volume for each wallet.
+   */
+  mapping(address => uint) public tradingVolume;
+  /**
+   * @dev The wallet with the highest number of force swaps.
+   */
+  address public highestTradingVolume;
 
   // Constructor
 
@@ -123,12 +148,10 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
     uint96 devRoyaltyFeeBips;
     /** Default token image as a data URI. */
     string defaultImage;
-    /** Lottery trading fee. */
-    uint96 lotteryPotFeeBips;
-    /** Lottery deadline. */
-    uint lotteryDeadline;
-    /** Lottery reveal threshold - the lottery can be drawn once given on. of tiles have been revealed.*/
-    uint lotteryRevealThreshold;
+    /** Prize pool trading fee. */
+    uint96 prizePoolFeeBips;
+    /** Game over reveal threshold - the game has ended once the given on. of tiles have been revealed.*/
+    uint gameOverRevealThreshold;
   }
   
   /**
@@ -138,9 +161,8 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
     minter = _config.minter;
     defaultImage = _config.defaultImage;
 
-    lottery.feeBips = _config.lotteryPotFeeBips;
-    lottery.deadline = _config.lotteryDeadline;
-    lottery.tileRevealThreshold = _config.lotteryRevealThreshold;
+    prizePool.feeBips = _config.prizePoolFeeBips;
+    gameOverRevealThreshold = _config.gameOverRevealThreshold;
 
     devRoyalties.receiver = _config.devRoyaltyReceiver;
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
@@ -198,14 +220,14 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    * @param _params The reveal parameters.
    */
   function reveal(MintRevealParams calldata _params) external {
-    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.lotteryTickets));
+    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
 
     _requireOwned(_params.tokenId);
 
     _reveal(_params.tokenId, _params.uri);
 
-    if (_params.lotteryTickets > 0) {
-      lottery.nft.batchMint(_params.wallet, _params.lotteryTickets);
+    if (_params.points > 0) {
+      _addPlayerPoints(_params.wallet, _params.points);
     }
   }
 
@@ -215,18 +237,21 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    * @param _id The token id.
    * @param _uri The token URI to set.
    */
-  function _reveal(uint256 _id, string memory _uri) internal {
+  function _reveal(uint256 _id, string memory _uri) private {
     if (revealed[_id]) {
       revert LibErrors.AlreadyRevealed(_id);
     }
 
+    _setTokenMetadata(_id, _uri);
+
     revealed[_id] = true;
     numRevealed++;
-
-    _setTokenMetadata(_id, _uri);
+    if (numRevealed >= gameOverRevealThreshold) {
+      _setGameOver();
+    }
   }
 
-  function _setTokenMetadata(uint256 _id, string memory _uri) internal {
+  function _setTokenMetadata(uint256 _id, string memory _uri) private {
     tokenMetadata[_id] = _uri;
     // IERC4906
     emit MetadataUpdate(_id);
@@ -271,7 +296,7 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    * @param _params The reveal parameters.
    */
   function mint(MintRevealParams calldata _params) external {
-    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.lotteryTickets));
+    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
 
     _safeMint(_params.wallet, _params.tokenId, "");
 
@@ -279,10 +304,25 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
       _reveal(_params.tokenId, _params.uri);
     }
 
-    if (_params.lotteryTickets > 0) {
-      lottery.nft.batchMint(_params.wallet, _params.lotteryTickets);
+    if (_params.points > 0) {
+      _addPlayerPoints(_params.wallet, _params.points);
     }
   }
+
+  function _addPlayerPoints(address _wallet, uint _points) private {
+    points[_wallet] += _points;
+
+    if (points[_wallet] > points[highestPoints[0]]) {
+      highestPoints[2] = highestPoints[1];
+      highestPoints[1] = highestPoints[0];
+      highestPoints[0] = _wallet;
+    } else if (points[_wallet] > points[highestPoints[1]]) {
+      highestPoints[2] = highestPoints[1];
+      highestPoints[1] = _wallet;
+    } else if (points[_wallet] > points[highestPoints[2]]) {
+      highestPoints[2] = _wallet;
+    }
+  } 
 
   // Pool functions 
 
@@ -321,86 +361,21 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
     return devRoyalties;
   }
 
-  // lottery
+  // prize pool
 
   /**
-   * @dev Get the lottery info.
-   */
-  function getLottery() external view returns (Lottery memory) {
-    return lottery;
-  }
-
-
-  /**
-   * @dev Calculate the dev royalties and lottery pots so far based on the current contract balance.
-   */
-  function _calculatePots() internal view returns (uint devRoyaltiesPot, uint lotteryPot) {
-    uint totalBips = devRoyalties.feeBips + lottery.feeBips;
-    devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
-    lotteryPot = address(this).balance - devRoyaltiesPot;
-  }
-
-
-  /**
-   * @dev Get the lottery.
+   * @dev Get the prize pool total pot.
    *
-   * If the lottery hasn't been drawn yet, this will calculate the potential pot. 
-   * If the lottery has been drawn, this will return the actual pot.
+   * If the prize pool isn't ready yet, this will calculate the potential pot. 
+   * If the prize pool is ready, this will return the actual pot.
    */
   function getLotteryPot() external view returns (uint) {
-    if (lottery.drawn) {
-      return lottery.drawnPot;
+    if (isGameOver()) {
+      return lottery.pot;
     } else {
       (, uint lotteryPot) = _calculatePots();
       return lotteryPot;
     }
-  }
-
-
-  /**
-   * @dev Set the lottery NFT contract.
-   * 
-   * Requirements:
-   * - The caller must be the owner.
-   * - The lottery NFT contract must not have been set yet.
-   * - The lottery NFT contract must support the ILotteryNFT interface.
-   * 
-   * @param _nft The address of the new lottery NFT contract.
-   */
-  function setLotteryNFT(address _nft) external onlyOwner {
-    if (address(lottery.nft) != address(0)) {
-      revert LibErrors.LotteryNFTAlreadySet();
-    }
-    
-    if (!IERC165(_nft).supportsInterface(type(ILotteryNFT).interfaceId)) {
-      revert LibErrors.LotteryNFTInvalid();
-    }
-
-    lottery.nft = ILotteryNFT(_nft);
-  }
-
-  /**
-   * @dev Check if the lottery can be drawn.
-   */
-  function canDrawLottery() external view returns (bool) {
-    return !lottery.drawn && 0 < lottery.numWinningTickets && (block.timestamp >= lottery.deadline || numRevealed >= lottery.tileRevealThreshold);
-  }
-
-  /**
-   * @dev Set the no. of winning tickets for the lottery.
-   *
-   * This can only be called once. Subsequent calls to drawLottery() must have the exactly this no. of tickets.
-   */
-  function setLotteryNumWinningTickets(uint _num) external onlyOwner {
-    if (_num < 1) {
-      revert LibErrors.LotteryInvalidNumWinningTickets();
-    }
-
-    if (lottery.numWinningTickets > 0) {
-      revert LibErrors.LotteryNumWinningTicketsAlreadySet();
-    }
-
-    lottery.numWinningTickets = _num;
   }
 
   /**
@@ -408,82 +383,81 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    *
    * @param _winners The winning ticket numbers.
    */
-  function drawLottery(uint[] calldata _winners) external onlyOwner {
-    if (lottery.drawn) {
-      revert LibErrors.LotteryAlreadyDrawn();
-    }
+  function _setGameOver() private {
+    gameOver = true;
 
-    if (block.timestamp < lottery.deadline && numRevealed < lottery.tileRevealThreshold) {
-      revert LibErrors.LotteryCannotBeDrawnYet();
-    }
-
-    if (lottery.numWinningTickets != _winners.length) {
-      revert LibErrors.LotteryNumWinningTicketsNotSet();
-    }
-
-    lottery.drawn = true;
-
-    (uint devRoyaltiesPot, uint lotteryPot) = _calculatePots();
-    lottery.drawnPot = lotteryPot;
+    (uint devRoyaltiesPot, uint prizePoolPot) = _calculatePots();
+    prizePool.pot = prizePoolPot;
 
     // update royalty fee to just be the dev fee and also send all money to the dev receiver
     _setDefaultRoyalty(devRoyalties.receiver, devRoyalties.feeBips);
 
-    // generate winners
-    lottery.winners = _winners;
-
     // withdraw dev royalties so far
     payable(devRoyalties.receiver).transfer(devRoyaltiesPot);
+
+    emit GameOver();
   }
 
   /**
-   * @dev Check if a given ticket is a lottery winner.
+   * @dev Check how much prize money given wallet can claim.
    *
-   * @param _ticket The ticket number to check.
+   * @param _wallet The wallet to check.
    */
-  function isLotteryWinner(uint _ticket) public view returns (bool) {
-    // check that the lottery has been drawn
-    if (!lottery.drawn) {
-      return false;
+  function calculatePrize(address _wallet) public view returns (uint) {
+    if (!gameOver) {
+      return 0;
     }
 
-    for (uint i = 0; i < lottery.winners.length; i++) {
-      if (lottery.winners[i] == _ticket) {
-        return true;
+    if (highestNumForceSwaps == _wallet) {
+      return prizePool.pot * 75 / 10; // 7.5%
+    }
+    
+    if (highestTradingVolume == _wallet) {
+      return prizePool.pot * 75 / 10; // 7.5%
+    }
+
+    for (uint i = 0; i < highestPoints.length; i++) {
+      if (highestPoints[i] == _wallet) {
+        /*
+        1st price: 45%
+        2nd price: 25%
+        3rd price: 15%
+        */
+        if (i == 0) {
+          return prizePool.pot * 45 / 100;
+        } else if (i == 1) {
+          return prizePool.pot * 25 / 100;
+        } else if (i == 2) {
+          return prizePool.pot * 15 / 100;
+        }
       }
     }
 
-    return false;
-  }
-
-  /**
-   * @dev Check if a given ticket can claim lottery winnings.
-   *
-   * @param _ticket The ticket number to check.
-   */
-  function canClaimLotteryWinnings(uint _ticket) public view returns (bool) {
-    if (!isLotteryWinner(_ticket)) {
-      return false;
-    }
-    return !lotteryWinningsClaimed[_ticket];
+    return 0;
   }
 
 
   /**
-   * @dev Claim lottery winnings for a given ticket.
+   * @dev Claim prize money for given wallet.
    *
-   * @param _ticket The ticket number to claim winnings for.
+   * @param _wallet The wallet to claim for.
    */
-  function claimLotteryWinnings(uint _ticket) external {
-    if (!canClaimLotteryWinnings(_ticket)) {
-      revert LibErrors.LotteryCannotClaimWinnings(_ticket);
+  function claimPrize(address _wallet) external {
+    if (prizeClaimed[_wallet]) {
+      revert LibErrors.PrizeAlreadyClaimed(_wallet);
     }
+    prizeClaimed[_wallet] = true;
+    payable(wallet).transfer(calculatePrize(_wallet));
+  }
 
-    lotteryWinningsClaimed[_ticket] = true;
 
-    // send winnings
-    address wallet = lottery.nft.ownerOf(_ticket);
-    payable(wallet).transfer(lottery.drawnPot / lottery.winners.length);
+  /**
+   * @dev Calculate the dev royalties and prize pool pots so far based on the current contract balance.
+   */
+  function _calculatePots() private view returns (uint devRoyaltiesPot, uint prizePoolPot) {
+    uint totalBips = devRoyalties.feeBips + prizePool.feeBips;
+    devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
+    prizePoolPot = address(this).balance - devRoyaltiesPot;
   }
 
   // Modifiers

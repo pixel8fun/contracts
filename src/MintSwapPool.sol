@@ -20,12 +20,10 @@ import { BlastOwnable } from "./BlastOwnable.sol";
  * ones are minted.
  *
  * Note that subsequent buyers receive the most recently added NFTs first, i.e. FIFO order. For example, if seller A sells NFT #1 and then #2
- * to the pool, then the next buyer will first receive NFT #2, followed by NFT #1.
+ * to the pool, then the next buyer will first receive NFT #2, followed by NFT #1. Buyers can, however, buy specific NFTs by id from the pool if 
+ * those ids are already minted.
  *
  * Mint price follows an exponential bonding curve, meaning price increases by a fixed percentage with each purchase.
- *
- * Different ranges of NFTs (e.g token ids 1 to 20 could be one "range") can have different bonding curves. Each curve only 
- * has access to its own liquidity.
  */
 contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   IPixel8 public nft;
@@ -97,7 +95,45 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   // Buying
   // ---------------------------------------------------------------
 
+  /**
+    * @dev Buy a specific NFT from the pool.
+    * @param _id Id of the NFT to buy.
+    */
+  function buySpecific(uint _id) external payable returns (BuyQuote memory quote) {
+    quote = _preBuy(1);
+    nft.safeTransferFrom(address(this), msg.sender, _id, "");
+    _postBuy(msg.sender, quote);
+  }
+
+  /**
+   * @dev Buy NFTs from the pool.
+   * @param numItems Number of NFTs to buy.
+   */
   function buy(uint numItems) external payable returns (BuyQuote memory quote) {
+    quote = _preBuy(numItems);
+
+    // transfer from balance first
+    uint balance = nft.balanceOf(address(this));
+    if (balance > 0) {
+      uint toTransfer = balance < numItems ? balance : numItems;
+      nft.batchTransferRange(address(this), sender, toTransfer);
+      numItems -= toTransfer;
+    }
+
+    // mint remaining
+    if (numItems > 0) {
+      nft.batchMint(sender, status.lastMintId + 1, numItems);
+      status.lastMintId += numItems;
+    }
+
+    _postBuy(sender, quote);
+  }
+
+  /**
+   * @dev Pre-buy processing.
+   * @param numItems Number of NFTs to buy.
+   */
+  function _preBuy(uint numItems) private returns (BuyQuote memory quote) {
     if (!enabled) {
       revert LibErrors.TradingDisabled();
     }
@@ -117,21 +153,14 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
 
     // update status
     status.priceWei = quote.newSpotPrice;
+  }
 
-    // transfer from balance first
-    uint balance = nft.balanceOf(address(this));
-    if (balance > 0) {
-      uint toTransfer = balance < numItems ? balance : numItems;
-      nft.batchTransferRange(address(this), sender, toTransfer);
-      numItems -= toTransfer;
-    }
-
-    // mint remaining
-    if (numItems > 0) {
-      nft.batchMint(sender, status.lastMintId + 1, numItems);
-      status.lastMintId += numItems;
-    }
-
+  /**
+   * @dev Post-buy processing.
+   * @param sender Buyer.
+   * @param quote Buy quote.
+   */
+  function _postBuy(address sender, BuyQuote memory quote) private {
     // pay fee
     payable(quote.feeReceiver).transfer(quote.fee);
 
@@ -156,7 +185,13 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   }
 
   /**
-   * inputValue is the amount of wei the buyer will pay, including the fee.
+   * @dev Get the buy quote for a given number of items.
+   * @param numItems Number of NFTs to buy.
+   * @return quote.error Error code.
+   * @return quote.inputValue Amount of wei the buyer will pay, including the fee.
+   * @return quote.fee Fee amount in wei.
+   * @return quote.feeReceiver Fee receiver.
+   * @return quote.newSpotPrice New spot price after purchase.
    */
   function getBuyQuote(uint numItems) public view returns (BuyQuote memory quote) {
     (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();
@@ -211,7 +246,13 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   }
 
   /**
-   * outputValue is the amount of wei the seller will receive, excluding the fee.
+   * @dev Get the sell quote for a given number of items.
+   * @param numItems Number of NFTs to sell.
+   * @return quote.error Error code.
+   * @return quote.outputValue Amount of wei the seller will receive.
+   * @return quote.fee Fee amount in wei.
+   * @return quote.feeReceiver Fee receiver.
+   * @return quote.newSpotPrice New spot price after purchase.
    */
   function getSellQuote(uint numItems) public view returns (SellQuote memory quote) {
     (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();

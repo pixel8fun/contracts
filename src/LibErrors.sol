@@ -70,42 +70,17 @@ library LibErrors {
   error TradingDisabled();
 
   /**
-   * @dev The lottery has already been drawn.
+   * @dev The NFT is not in the pool.
    */
-  error LotteryAlreadyDrawn();
+  error NftNotInPool(uint256 id);
 
   /**
-   * @dev The given ticket cannot claim winnings.
+   * @dev The game is not yet over.
    */
-  error LotteryCannotClaimWinnings(uint ticket);
+  error GameNotOver();
 
   /**
-   * @dev The lottery cannot be drawn yet.
+   * @dev The wallet has already claimed its prize.
    */
-  error LotteryCannotBeDrawnYet();
-
-  /**
-   * @dev The lottery ticket NFT has already been set.
-   */
-  error LotteryNFTAlreadySet();
-
-  /**
-   * @dev The lottery ticket NFT is invalid.
-   */
-  error LotteryNFTInvalid();
-
-  /**
-  * @dev Lottery no. of winning tickets already set.
-  */
-  error LotteryNumWinningTicketsAlreadySet();
-
-  /**
-  * @dev Lottery no. of winning tickets not yet set.
-  */
-  error LotteryNumWinningTicketsNotSet();
-
-  /**
-   * @dev Invalid number for no. of winning tickets in lottery.
-   */
-  error LotteryInvalidNumWinningTickets();
+  error PrizeAlreadyClaimed(address wallet);
 }
