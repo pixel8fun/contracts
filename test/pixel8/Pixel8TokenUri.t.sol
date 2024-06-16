@@ -3,11 +3,11 @@ pragma solidity ^0.8.24;
 
 import {console2 as c} from "forge-std/Test.sol";
 import { IERC721Errors } from "openzeppelin/interfaces/draft-IERC6093.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 
-contract Pixel8NftTokenUri is Pixel8NftTestBase {
+contract Pixel8TokenUri is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
 

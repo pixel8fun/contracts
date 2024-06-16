@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import { Vm } from "forge-std/Vm.sol";
 import { console2 as c } from "forge-std/Test.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 
-contract Pixel8NftSetDefaultImage is Pixel8NftTestBase {
+contract Pixel8SetDefaultImage is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
   }

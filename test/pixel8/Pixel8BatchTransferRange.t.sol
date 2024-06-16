@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
+contract Pixel8BatchTransferRange is Pixel8TestBase {
   function setUp() public override {
     super.setUp();
 
@@ -20,7 +20,7 @@ contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
     vm.stopPrank();
   }
 
-  function test_Pixel8NftBatchTransferRange_ByOwner_Succeeds() public {
+  function test_Pixel8BatchTransferRange_ByOwner_Succeeds() public {
     vm.prank(wallet1);
     pixel8.batchTransferRange(wallet1, wallet2, 2);
 
@@ -41,7 +41,7 @@ contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
     assertEq(pixel8.tokenOfOwnerByIndex(wallet2, 2), 3);
   }
 
-  function test_Pixel8NftBatchTransferRange_ByPool_Succeeds() public {
+  function test_Pixel8BatchTransferRange_ByPool_Succeeds() public {
     vm.prank(pool1);
     pixel8.batchTransferRange(wallet1, wallet2, 2);
 
@@ -49,13 +49,13 @@ contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
     assertEq(pixel8.ownerOf(3), wallet2);
   }
 
-  function test_Pixel8NftBatchTransferRangeIfNotAuthorised_Fails() public {
+  function test_Pixel8BatchTransferRangeIfNotAuthorised_Fails() public {
     vm.prank(wallet2);
     vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NotAuthorized.selector, wallet1, wallet2, 4));
     pixel8.batchTransferRange(wallet1, wallet2, 2);
   }
 
-  function test_Pixel8NftBatchTransferRange_IfAllAuthorised_Succeeds() public {
+  function test_Pixel8BatchTransferRange_IfAllAuthorised_Succeeds() public {
     vm.startPrank(wallet1);
     pixel8.approve(wallet2, 4);
     pixel8.approve(wallet2, 3);
@@ -68,7 +68,7 @@ contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
     assertEq(pixel8.ownerOf(3), wallet2);
   }
 
-  function test_Pixel8NftBatchTransferRange_IfNotAllAuthorised_Fails() public {
+  function test_Pixel8BatchTransferRange_IfNotAllAuthorised_Fails() public {
     vm.startPrank(wallet1);
     pixel8.approve(wallet2, 4);
     vm.stopPrank();
@@ -78,13 +78,13 @@ contract Pixel8NftBatchTransferRange is Pixel8NftTestBase {
     pixel8.batchTransferRange(wallet1, wallet2, 2);
   }
 
-  function test_Pixel8NftBatchTransferRange_ToZeroAddress_Fails() public {
+  function test_Pixel8BatchTransferRange_ToZeroAddress_Fails() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721ZeroAddress.selector));
     pixel8.batchTransferRange(wallet1, address(0), 2);
   }
 
-  function test_Pixel8NftBatchTransfer_InvokesReceiver() public {
+  function test_Pixel8BatchTransfer_InvokesReceiver() public {
     GoodERC721Receiver good = new GoodERC721Receiver();
 
     vm.prank(pool1);

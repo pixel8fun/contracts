@@ -23,17 +23,6 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     assertEq(s.priceWei, 1 gwei);
   }
 
-  function test_ClaimGasRefunds_WhenOwner() public {
-    vm.prank(owner1);
-    pool.claimGasRefunds();
-  }
-
-  function test_ClaimGasRefunds_WhenNotOwner() public {
-    vm.prank(wallet1);
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, wallet1));
-    pool.claimGasRefunds();
-  }
-
   function test_MintPrice_Fuzz(uint128 price) public {
     vm.assume(price >= 1 gwei);
 

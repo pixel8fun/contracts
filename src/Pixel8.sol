@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Auth } from "./Auth.sol";
 import { ERC721 } from "./ERC721.sol";
+import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { IERC165 } from "openzeppelin/interfaces/IERC165.sol";
 import { IERC721 } from "openzeppelin/interfaces/IERC721.sol";
 import { ERC2981 } from "openzeppelin/token/common/ERC2981.sol";
@@ -14,8 +15,14 @@ import { LibErrors } from "./LibErrors.sol";
 import { IPixel8 } from "./IPixel8.sol";
 
 
-contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
+contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   using Strings for uint256;
+
+  /**
+   * @dev Emitted when the game is over.
+   */
+  event GameOver();
+
 
   /**
    * @dev Prize pool info.
@@ -51,12 +58,12 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   /**
    * @dev Dev royalties info.
    */
-  DevRoyalties public devRoyalties;
+  DevRoyalties private devRoyalties;
 
   /**
    * @dev Prize pool info.
    */
-  PrizePool public prizePool;
+  PrizePool private prizePool;
 
   /**
    * @dev The liquidity pool contract.
@@ -155,7 +162,7 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   /**
    * @dev Constructor.
    */
-  constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") BlastOwnable(_config.owner) {
+  constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") Ownable(_config.owner) {
     minter = _config.minter;
     defaultImage = _config.defaultImage;
 
@@ -210,6 +217,16 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
   }
 
+  // Functions - getters
+
+  function getDevRoyalties() external view returns (DevRoyalties memory) {
+    return devRoyalties;
+  }
+
+  function getPrizePool() external view returns (PrizePool memory) {
+    return prizePool;
+  }
+
   // Functions - reveal token
 
   /**
@@ -243,6 +260,7 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     _setTokenMetadata(_id, _uri);
 
     revealed[_id] = true;
+
     numRevealed++;
     if (numRevealed >= gameOverRevealThreshold) {
       _setGameOver();
@@ -310,15 +328,33 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   function _addPlayerPoints(address _wallet, uint _points) private {
     points[_wallet] += _points;
 
-    if (points[_wallet] > points[highestPoints[0]]) {
-      highestPoints[2] = highestPoints[1];
-      highestPoints[1] = highestPoints[0];
-      highestPoints[0] = _wallet;
-    } else if (points[_wallet] > points[highestPoints[1]]) {
-      highestPoints[2] = highestPoints[1];
-      highestPoints[1] = _wallet;
-    } else if (points[_wallet] > points[highestPoints[2]]) {
-      highestPoints[2] = _wallet;
+    // update highest points list
+
+    // first go through list and see if wallet is already a high scorer
+    uint i = 0;
+    while (i < 3) {
+      if (highestPoints[i] == _wallet) {
+        break;
+      }
+      i++;
+    }
+
+    // if not in list but it should be, then add it
+    if (i == 3) {
+      if (points[highestPoints[2]] < _points) {
+        highestPoints[2] = _wallet;
+      }
+    }
+
+    // resort list using bubble sort
+    for (i = 0; i < 3; i++) {
+      for (uint j = i + 1; j < 3; j++) {
+        if (points[highestPoints[i]] < points[highestPoints[j]]) {
+          address temp = highestPoints[i];
+          highestPoints[i] = highestPoints[j];
+          highestPoints[j] = temp;
+        }
+      }
     }
   } 
 
@@ -353,12 +389,6 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     _safeBatchTransfer(msg.sender, _from, _to, _numTokens, "");
   }
 
-  // dev royalties
-
-  function getDevRoyalties() external view returns (DevRoyalties memory) {
-    return devRoyalties;
-  }
-
   // prize pool
 
   /**
@@ -368,11 +398,11 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * If the prize pool is ready, this will return the actual pot.
    */
   function getPrizePoolPot() external view returns (uint) {
-    if (isGameOver()) {
+    if (gameOver) {
       return prizePool.pot;
     } else {
-      (, uint prizePool) = _calculatePots();
-      return prizePool;
+      (, uint prizePoolPot) = _calculatePots();
+      return prizePoolPot;
     }
   }
 
@@ -442,8 +472,10 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     if (prizeClaimed[_wallet]) {
       revert LibErrors.PrizeAlreadyClaimed(_wallet);
     }
+
     prizeClaimed[_wallet] = true;
-    payable(wallet).transfer(calculatePrize(_wallet));
+
+    payable(_wallet).transfer(calculatePrize(_wallet));
   }
 
 

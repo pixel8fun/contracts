@@ -3,12 +3,12 @@ pragma solidity ^0.8.24;
 
 import { Vm } from "forge-std/Vm.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { Pixel8 } from "src/Pixel8.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 
-contract Pixel8NftRevealing is Pixel8NftTestBase {
+contract Pixel8Revealing is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
 
@@ -41,8 +41,8 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
     _pixel8_reveal(wallet1, 1, "uri1", 1);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    // 1 metadata update -> 1 lottery ticket minted
-    assertEq(entries.length, 2, "Invalid entry count");
+    // 1 metadata update
+    assertEq(entries.length, 1, "Invalid entry count");
     assertEq(entries[0].topics.length, 1, "Invalid event count");
     assertEq(
         entries[0].topics[0],
@@ -62,7 +62,7 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
     assertEq(pixel8.numRevealed(), 1, "post 1: revealed count");
   }
 
-  function test_RevealWithMinterAuthorisation_AwardsLotteryTickets() public {
+  function test_RevealWithMinterAuthorisation_AwardsPoints() public {
     vm.prank(wallet1);
     _pixel8_reveal(wallet1, 1, "uri1", 1);    
 
@@ -74,6 +74,9 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
 
     assertEq(pixel8.tokenURI(2), "uri2");
     assertEq(pixel8.revealed(2), true);
+
+    assertEq(pixel8.points(wallet1), 3);
+    assertEq(pixel8.points(wallet2), 0);
   }
 
   function test_RevealWithNotMinterAuthorisation_Fails() public {
@@ -83,7 +86,7 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
-      lotteryTickets: 1,
+      points: 1,
       authSig: _computeOwnerSig(
         abi.encodePacked(wallet1, uint(1), "uri1", uint(1)),
         block.timestamp + 10 seconds
@@ -96,7 +99,7 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
-      lotteryTickets: 1,
+      points: 1,
       authSig: _computeSig(
         0x123,
         abi.encodePacked(wallet1, uint(1), "uri1", uint(1)),
@@ -112,7 +115,7 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri",
-      lotteryTickets: 1,
+      points: 1,
       authSig: _computeMinterSig(
         abi.encodePacked(wallet1, uint(1), "uri", uint(1)),
         block.timestamp - 1 seconds

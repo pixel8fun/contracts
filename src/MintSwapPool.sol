@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import { IPixel8 } from "./IPixel8.sol";
 import { LibErrors } from "./LibErrors.sol";
+import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "./Common.sol";
 import { ExponentialCurve } from "./ExponentialCurve.sol";
 import { IERC721TokenReceiver } from "./ERC721.sol";
-import { BlastOwnable } from "./BlastOwnable.sol";
 
 /**
  * @dev NFT liquidity pool that both mints and swaps.
@@ -25,7 +25,7 @@ import { BlastOwnable } from "./BlastOwnable.sol";
  *
  * Mint price follows an exponential bonding curve, meaning price increases by a fixed percentage with each purchase.
  */
-contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
+contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   IPixel8 public nft;
   PoolCurve public curve;
   PoolStatus public status;
@@ -49,7 +49,7 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
     PoolCurve curve;
   }
 
-  constructor(Config memory _config) BlastOwnable(_config.owner) {
+  constructor(Config memory _config) Ownable(_config.owner) {
     if (!validateSpotPrice(_config.curve.startPriceWei)) {
       revert LibErrors.InvalidMintPrice(_config.curve.startPriceWei);
     }
@@ -100,9 +100,13 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
     * @param _id Id of the NFT to buy.
     */
   function buySpecific(uint _id) external payable returns (BuyQuote memory quote) {
+    address sender = payable(msg.sender);
+
     quote = _preBuy(1);
-    nft.safeTransferFrom(address(this), msg.sender, _id, "");
-    _postBuy(msg.sender, quote);
+
+    nft.safeTransferFrom(address(this), sender, _id, "");
+
+    _postBuy(sender, quote);
   }
 
   /**
@@ -110,6 +114,8 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
    * @param numItems Number of NFTs to buy.
    */
   function buy(uint numItems) external payable returns (BuyQuote memory quote) {
+    address sender = payable(msg.sender);
+
     quote = _preBuy(numItems);
 
     // transfer from balance first
@@ -187,11 +193,6 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   /**
    * @dev Get the buy quote for a given number of items.
    * @param numItems Number of NFTs to buy.
-   * @return quote.error Error code.
-   * @return quote.inputValue Amount of wei the buyer will pay, including the fee.
-   * @return quote.fee Fee amount in wei.
-   * @return quote.feeReceiver Fee receiver.
-   * @return quote.newSpotPrice New spot price after purchase.
    */
   function getBuyQuote(uint numItems) public view returns (BuyQuote memory quote) {
     (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();
@@ -248,11 +249,6 @@ contract MintSwapPool is BlastOwnable, IERC721TokenReceiver, ExponentialCurve {
   /**
    * @dev Get the sell quote for a given number of items.
    * @param numItems Number of NFTs to sell.
-   * @return quote.error Error code.
-   * @return quote.outputValue Amount of wei the seller will receive.
-   * @return quote.fee Fee amount in wei.
-   * @return quote.feeReceiver Fee receiver.
-   * @return quote.newSpotPrice New spot price after purchase.
    */
   function getSellQuote(uint numItems) public view returns (SellQuote memory quote) {
     (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();

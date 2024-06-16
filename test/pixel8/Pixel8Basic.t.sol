@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { Pixel8 } from "src/Pixel8.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 
-contract Pixel8NftBasic is Pixel8NftTestBase {
+contract Pixel8Basic is Pixel8TestBase {
   function test_DefaultConfig() public {
     assertEq(pixel8.name(), "Pixel8", "name");
     assertEq(pixel8.symbol(), "PIXEL8", "symbol");
@@ -18,16 +18,14 @@ contract Pixel8NftBasic is Pixel8NftTestBase {
     assertEq(devRoyalties.feeBips, 1000, "devRoyalties.feeBips");
     assertEq(devRoyalties.receiver, owner1, "devRoyalties.receiver");
 
-    Pixel8.Lottery memory lottery = pixel8.getLottery();
-    assertEq(lottery.feeBips, 1000, "lottery.feeBips");
-    assertEq(lottery.deadline, block.timestamp + 10, "lottery.deadline");
-    assertEq(lottery.tileRevealThreshold, 10, "lottery.tileRevealThreshold");
-    assertEq(lottery.drawn, false, "lottery.drawn");
-    assertEq(lottery.drawnPot, 0, "lottery.drawnPot");
-    assertEq(lottery.numWinningTickets, 0, "lottery.numWinningTickets");
-    assertEq(address(lottery.nft), address(0), "lottery.ticketNFT");
+    Pixel8.PrizePool memory prizePool = pixel8.getPrizePool();
+    assertEq(prizePool.feeBips, 1000, "prizePool.feeBips");
+    assertEq(prizePool.pot, 0, "prizePool.pot");
 
-    assertEq(pixel8.getLotteryPot(), 0, "getLotteryPotSoFar");
+    assertEq(pixel8.getPrizePoolPot(), 0, "getPrizePoolPot");
+    
+    assertEq(pixel8.gameOver(), false, "gameOver");
+    assertEq(pixel8.gameOverRevealThreshold(), 10, "gameOverRevealThreshold");
 
     assertEq(pixel8.totalSupply(), 0, "totalSupply");
     (address r1, uint r2) = pixel8.royaltyInfo(0, 100);
@@ -37,16 +35,5 @@ contract Pixel8NftBasic is Pixel8NftTestBase {
     (address rec, uint fee) = pixel8.getRoyaltyInfo();
     assertEq(rec, pixel8_addr, "getRoyaltyInfo.receiver");
     assertEq(fee, 2000, "getRoyaltyInfo.fee");
-  }
-
-  function test_ClaimGasRefunds_WhenOwner() public {
-    vm.prank(owner1);
-    pixel8.claimGasRefunds();
-  }
-
-  function test_ClaimGasRefunds_WhenNotOwner() public {
-    vm.prank(wallet1);
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, wallet1));
-    pixel8.claimGasRefunds();
   }
 }

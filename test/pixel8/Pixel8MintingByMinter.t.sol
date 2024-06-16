@@ -4,13 +4,13 @@ pragma solidity ^0.8.24;
 
 import {console2 as c} from "forge-std/Test.sol";
 import { Vm } from "forge-std/Vm.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { Auth } from "src/Auth.sol";
 import { Pixel8 } from "src/Pixel8.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
+contract Pixel8MintingByMinter is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
   }
@@ -50,8 +50,8 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
     _pixel8_mint(wallet1, 1, "uri", 4);
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    // 1 pixel8 mint + 1 metadata update + 4 lottery mints
-    assertEq(entries.length, 6, "Invalid entry count");
+    // 1 pixel8 mint + 1 metadata update
+    assertEq(entries.length, 2, "Invalid entry count");
     assertEq(entries[1].topics.length, 1, "Invalid event count");
     assertEq(
         entries[1].topics[0],
@@ -77,7 +77,7 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
     assertEq(pixel8.tokenURI(2), _buildDefaultTokenUri(2));
   }
 
-  function test_MintWithMinterAuthorisation_AwardsLotteryTickets() public {
+  function test_MintWithMinterAuthorisation_AwardsPoints() public {
     uint id = 1;
     string memory uri = "";
 
@@ -90,8 +90,8 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
     vm.prank(wallet2);
     _pixel8_mint(wallet2, id + 2, uri, 0);
 
-    assertEq(lotteryNft.balanceOf(wallet1), 9); 
-    assertEq(lotteryNft.balanceOf(wallet2), 0);
+    assertEq(pixel8.points(wallet1), 9);
+    assertEq(pixel8.points(wallet2), 0);
   }
 
   function test_MintWithMinterAuthorisation_AndUriSet_RevealsTheToken() public {
@@ -109,8 +109,8 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
     assertEq(pixel8.revealed(1), true, "revealed state");
     assertEq(pixel8.numRevealed(), 1, "revealed count");
 
-    // Mint pixel8 -> Set metadata -> 4 x Mint lottery
-    assertEq(entries.length, 6, "Invalid entry count");
+    // Mint pixel8 + Set metadata
+    assertEq(entries.length, 2, "Invalid entry count");
     assertEq(entries[1].topics.length, 1, "Invalid event count");
     assertEq(
         entries[1].topics[0],
@@ -131,7 +131,7 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: id,
       uri: uri,
-      lotteryTickets: 1,
+      points: 1,
       authSig: _computeOwnerSig(
         abi.encodePacked(wallet1, id, uri), 
         block.timestamp + 10 seconds
@@ -154,7 +154,7 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: id,
       uri: uri,
-      lotteryTickets: 1,
+      points: 1,
       authSig: sig
     }));
   }
@@ -169,7 +169,7 @@ contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
       wallet: wallet1,
       tokenId: id,
       uri: uri,
-      lotteryTickets: 1,
+      points: 1,
       authSig: _computeMinterSig(
         abi.encodePacked(wallet1, id, uri, uint(1)), 
         block.timestamp - 1 seconds

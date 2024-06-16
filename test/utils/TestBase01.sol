@@ -18,6 +18,7 @@ abstract contract TestBase01 is Test {
 
   address payable wallet1 = payable(address(0x1234567890));
   address payable wallet2 = payable(address(0x1234567890123));
+  address payable wallet3 = payable(address(0x1234567890124));
 
   Pixel8 public pixel8;
   address pixel8_addr;
@@ -28,13 +29,13 @@ abstract contract TestBase01 is Test {
   }
 
   function setUp() public virtual {    
-    pixel8 = new Pixel8(_getDefaultPixel8NftConfig());
+    pixel8 = new Pixel8(_getDefaultPixel8Config());
     pixel8_addr = address(pixel8);
   }
 
   // Helper methods
 
-  function _getDefaultPixel8NftConfig() internal view returns (Pixel8.Config memory) {
+  function _getDefaultPixel8Config() internal view returns (Pixel8.Config memory) {
     return Pixel8.Config({
       owner: owner1,
       minter: minter1,

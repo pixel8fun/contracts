@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract Pixel8NftMintingByPool is Pixel8NftTestBase {
+contract Pixel8MintingByPool is Pixel8TestBase {
   function setUp() public override {
     super.setUp();
 
