@@ -5,7 +5,6 @@ import { MessageHashUtils } from "lib/openzeppelin-contracts/contracts/utils/cry
 import { ERC721, IERC721TokenReceiver } from "src/ERC721.sol";
 import { Auth } from "src/Auth.sol";
 import { Pixel8 } from "src/Pixel8.sol";  
-import { LotteryNFT } from "src/LotteryNFT.sol";
 
 import {Test, console2 as c} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -23,9 +22,6 @@ abstract contract TestBase01 is Test {
   Pixel8 public pixel8;
   address pixel8_addr;
 
-  LotteryNFT public lotteryNft;
-  address lotteryNft_addr;
-
   constructor() payable {
     c.log("Test contract address", address(this));
     c.log("msg.sender", msg.sender);
@@ -34,9 +30,6 @@ abstract contract TestBase01 is Test {
   function setUp() public virtual {    
     pixel8 = new Pixel8(_getDefaultPixel8NftConfig());
     pixel8_addr = address(pixel8);
-
-    lotteryNft = new LotteryNFT(_getDefaultLotteryNftConfig(pixel8));
-    lotteryNft_addr = address(lotteryNft);
   }
 
   // Helper methods
@@ -48,21 +41,10 @@ abstract contract TestBase01 is Test {
       devRoyaltyFeeBips: 1000, /* 1000 bips = 10% */
       defaultImage: "img",
       devRoyaltyReceiver: owner1,
-      lotteryPotFeeBips: 1000, /* 1000 bips = 10% */
-      lotteryDeadline: block.timestamp + 10,
-      lotteryRevealThreshold: 10
+      prizePoolFeeBips: 1000, /* 1000 bips = 10% */
+      gameOverRevealThreshold: 10
     });
   }  
-
-  function _getDefaultLotteryNftConfig(Pixel8 t) internal view returns (LotteryNFT.Config memory) {
-    return LotteryNFT.Config({
-      owner: owner1,
-      minter: address(t),
-      defaultImage: "img",
-      royaltyReceiver: owner1,
-      royaltyFeeBips: 1000
-    });
-  }
 
   function _computeMinterSig(bytes memory _data, uint _deadline) internal view returns (Auth.Signature memory) {
     return _computeSig(minter1_key, _data, _deadline);
@@ -81,14 +63,14 @@ abstract contract TestBase01 is Test {
     });
   }
 
-  function _pixel8_mint(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
+  function _pixel8_mint(address _wallet, uint _tokenId, string memory _uri, uint _points) internal {
     Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
-      lotteryTickets: _lotteryTickets,
+      points: _points,
       authSig: _computeMinterSig(
-        abi.encodePacked(_wallet, _tokenId, _uri, _lotteryTickets), 
+        abi.encodePacked(_wallet, _tokenId, _uri, _points), 
         block.timestamp + 10 seconds
       )
     });
@@ -96,14 +78,14 @@ abstract contract TestBase01 is Test {
     pixel8.mint(params);
   }
 
-  function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri, uint _lotteryTickets) internal {
+  function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri, uint _points) internal {
     Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
-      lotteryTickets: _lotteryTickets,
+      points: _points,
       authSig: _computeMinterSig(
-        abi.encodePacked(_wallet, _tokenId, _uri, _lotteryTickets), 
+        abi.encodePacked(_wallet, _tokenId, _uri, _points), 
         block.timestamp + 10 seconds
       )
     });

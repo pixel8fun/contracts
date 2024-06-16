@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Strings } from "openzeppelin/utils/Strings.sol";
 import { Pixel8 } from "src/Pixel8.sol";  
-import { LotteryNFT } from "src/LotteryNFT.sol";
 import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 

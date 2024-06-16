@@ -11,10 +11,6 @@ contract Pixel8NftTokenUri is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
 
-    vm.startPrank(owner1);
-    pixel8.setLotteryNFT(lotteryNft_addr);
-    vm.stopPrank();
-
     string memory uri = "";
 
     vm.prank(wallet1);

@@ -5,7 +5,6 @@ import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
 import { Pixel8 } from "src/Pixel8.sol";
-import { LotteryNFT } from "src/LotteryNFT.sol";
 import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 

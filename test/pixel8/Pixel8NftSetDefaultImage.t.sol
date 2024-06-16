@@ -9,10 +9,6 @@ import { Ownable } from "openzeppelin/access/Ownable.sol";
 contract Pixel8NftSetDefaultImage is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
-
-    vm.startPrank(owner1);
-    pixel8.setLotteryNFT(lotteryNft_addr);
-    vm.stopPrank();
   }
 
   function test_SetDefaultImageWhenOwner_Succeeds() public {

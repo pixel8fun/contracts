@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import { console as c } from "forge-std/Script.sol";
 import { ScriptBase } from "./ScriptBase.sol";
 import { Pixel8 } from "src/Pixel8.sol";
-import { LotteryNFT } from "src/LotteryNFT.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
 
 contract Deploy is ScriptBase {
@@ -31,22 +30,6 @@ contract Deploy is ScriptBase {
       pixel8 = new Pixel8{salt: CREATE2_SALT}(pixel8Config);
       c.log("Pixel8:", address(pixel8));
     }
-    
-    c.log("Deploying LotteryNFT...");
-
-    LotteryNFT.Config memory lotteryNftConfig = _getLotteryNftConfig(cfg, pixel8Address);
-    c.log("LotteryNFT constructor args:");
-    c.logBytes(abi.encode(lotteryNftConfig));
-
-    LotteryNFT lotteryNft;
-    address lotteryNftAddress = _getDeployedAddress(type(LotteryNFT).creationCode, abi.encode(lotteryNftConfig));
-    if (lotteryNftAddress.code.length > 0) {
-      c.log("LotteryNFT already deployed at:", lotteryNftAddress);
-      lotteryNft = LotteryNFT(lotteryNftAddress);
-    } else {
-      lotteryNft = new LotteryNFT{salt: CREATE2_SALT}(lotteryNftConfig);
-      c.log("LotteryNFT:", address(lotteryNft));
-    }
 
     c.log("Deploying MintSwapPool...");
 
@@ -70,14 +53,6 @@ contract Deploy is ScriptBase {
       pixel8.setPool(poolAddress);
     } else {
       c.log("Pool already enabled on Pixel8 contract...");    
-    }
-
-    address currentLottery = address(pixel8.getLottery().nft);
-    if (currentLottery != lotteryNftAddress) {
-      c.log("Enable lottery on Pixel8 contract...");
-      pixel8.setLotteryNFT(lotteryNftAddress);
-    } else {
-      c.log("Lottery already enabled on Pixel8 contract...");    
     }
 
     c.log("All done");

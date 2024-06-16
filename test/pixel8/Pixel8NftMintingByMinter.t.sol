@@ -13,10 +13,6 @@ import { IERC721Errors } from "src/IERC721Errors.sol";
 contract Pixel8NftMintingByMinter is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
-
-    vm.startPrank(owner1);
-    pixel8.setLotteryNFT(lotteryNft_addr);
-    vm.stopPrank();
   }
 
   function test_MintWithMinterAuthorisation_Succeeds() public {

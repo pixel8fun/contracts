@@ -7,20 +7,16 @@ Smart contracts for [Pixel8](https://pixel8.art).
 
 Features:
 
-* **Fully on-chain metadata (including images)!**
+  * **Fully on-chain metadata (including images)!**
 * `MintSwapPool` pool inspired by [SudoSwap](https://github.com/sudoswap/lssvm).
   * Exponential price curve.
   * Pool mints NFTs on-demand until no more left to mint. Initial buyers thus recieve minted freshly NFTs.
   * Sellers sell NFTs into pool, and subsequent buyers recieve these NFTs until they run out, after which the pool again mints new NFTs.
-* To encourage holders to mint and reveal NFTs a lottery ticket system is implemented:
-  * A percentage of every NFT trade goes into a lottery pot, accumulating over time.
-  * Every permissioned mint will award 3 lottery tickets to the caller.
-  * Every permissioned reveal will award 1 lottery ticket to the caller.
-  * After all tiles have been minted and revealed the lottery will be drawn and a small no. of random tickets will be selected as winners.
-    * These winning tickets will then be able to withdraw their share of the lottery pot.
-  * Notes:
-    * Lottery tickets themselves are a separate ERC721 collection.
-    * The lottery has a deadline (Jan 1st, 2025), after which the lottery can be drawn even if not all tiles have been minted and revealed. This is to handle the case where for some reason the puzzle can't be finished.
+* To encourage holders to mint and reveal NFTs a points system is implemented:
+  * A percentage of every NFT trade goes into a prize pool, accumulating over time.
+  * Every permissioned mint will award points to the caller.
+  * Every permissioned reveal will award points to the caller.
+  * After all tiles have been minted and revealed the users with the highest points can claim a share of the prize pool.
 
 Technicals details:
 

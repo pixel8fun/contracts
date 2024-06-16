@@ -12,9 +12,6 @@ contract Pixel8NftRevealing is Pixel8NftTestBase {
   function setUp() virtual override public {
     super.setUp();
 
-    vm.prank(owner1);
-    pixel8.setLotteryNFT(lotteryNft_addr);
-
     vm.startPrank(wallet1);
     _pixel8_mint(wallet1, 1, "", 1);
     _pixel8_mint(wallet1, 2, "", 1);

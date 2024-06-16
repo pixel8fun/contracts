@@ -13,7 +13,6 @@ contract Pixel8NftLottery is Pixel8NftTestBase {
     super.setUp();
 
     vm.startPrank(owner1);
-    pixel8.setLotteryNFT(lotteryNft_addr);
     pixel8.setPool(pool1);    
     vm.stopPrank();
   }

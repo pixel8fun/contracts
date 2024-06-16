@@ -12,11 +12,9 @@ import { Strings } from "openzeppelin/utils/Strings.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { IPixel8 } from "./IPixel8.sol";
-import { ILotteryNFT } from "./ILotteryNFT.sol";
-import { BlastOwnable } from "./BlastOwnable.sol";
 
 
-contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
+contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   using Strings for uint256;
 
   /**
@@ -167,7 +165,7 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
     devRoyalties.receiver = _config.devRoyaltyReceiver;
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
 
-    _setDefaultRoyalty(address(this), devRoyalties.feeBips + lottery.feeBips);
+    _setDefaultRoyalty(address(this), devRoyalties.feeBips + prizePool.feeBips);
   }
 
   // Approvals
@@ -369,19 +367,17 @@ contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, BlastOwnable {
    * If the prize pool isn't ready yet, this will calculate the potential pot. 
    * If the prize pool is ready, this will return the actual pot.
    */
-  function getLotteryPot() external view returns (uint) {
+  function getPrizePoolPot() external view returns (uint) {
     if (isGameOver()) {
-      return lottery.pot;
+      return prizePool.pot;
     } else {
-      (, uint lotteryPot) = _calculatePots();
-      return lotteryPot;
+      (, uint prizePool) = _calculatePots();
+      return prizePool;
     }
   }
 
   /**
-   * @dev Draw the lottery.
-   *
-   * @param _winners The winning ticket numbers.
+   * @dev Game over.
    */
   function _setGameOver() private {
     gameOver = true;
