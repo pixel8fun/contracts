@@ -11,11 +11,16 @@ Features:
   * Exponential price curve.
   * Pool mints NFTs on-demand until no more left to mint. Initial buyers thus recieve minted freshly NFTs.
   * Sellers sell NFTs into pool, and subsequent buyers recieve these NFTs until they run out, after which the pool again mints new NFTs.
-* To encourage holders to mint and reveal NFTs a points system is implemented:
+* Force-swapping
+  * The purpose is to ensure a game can always be finished if atleast one player keeps playing by prevent "forever lost" tiles. 
+  * Also provides for an interesting game dynamic!
+  * Force swaps have a cost - fee goes into prize pool.
+  * Users can force-swap tiles with another user (except those held by the pool).
+  * Tiles have a predefined cooldown period when they've just been swapped or bought from the pool - within this period they cannot be swapped.
+* To encourage holders to mint and reveal NFTs prizes are awarded:
   * A percentage of every NFT trade goes into a prize pool, accumulating over time.
-  * Every permissioned mint will award points to the caller.
-  * Every permissioned reveal will award points to the caller.
-  * After all tiles have been minted and revealed the users with the highest points can claim a share of the prize pool.
+  * Every permissioned reveal will award points to the revealer.
+  * After a predefined reveal threshold is reached prizes are given to the top 3 point scorers, biggest trader and biggest force swapper.
 
 Technicals details:
 
@@ -74,7 +79,6 @@ $ bun view-coverage
 
 _Notes:_
 
-* _The `owner`, `minter`, `revealer` and `pool` roles are all set to be the deployment wallet's address._
 * _[CREATE2](https://book.getfoundry.sh/tutorials/create2-tutorial) is used for deployment, so the address will always be the same as long as the deployment wallet and bytecode are the same, irrespective of chain, nonce, etc._
 
 ### Local (anvil)
@@ -117,7 +121,7 @@ $ bun verify-testnet
 AGPLv3 - see [LICENSE.md](LICENSE.md)
 
 Pixel8 smart contracts
-Copyright (C) 2024  [v42 Labs](https://v42.space)
+Copyright (C) 2024  [Pixel8 team](https://pixel8.art)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
