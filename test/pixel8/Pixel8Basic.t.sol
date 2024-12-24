@@ -8,6 +8,7 @@ import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 
 contract Pixel8Basic is Pixel8TestBase {
   function test_DefaultConfig() public {
+    assertEq(pixel8.VERSION(), 1, "version");
     assertEq(pixel8.name(), "Pixel8", "name");
     assertEq(pixel8.symbol(), "PIXEL8", "symbol");
     assertEq(pixel8.owner(), owner1, "owner");

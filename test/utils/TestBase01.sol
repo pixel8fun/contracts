@@ -64,14 +64,13 @@ abstract contract TestBase01 is Test {
     });
   }
 
-  function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri, uint _points) internal {
+  function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri) internal {
     Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
-      points: _points,
       authSig: _computeAuthoriserSig(
-        abi.encodePacked(_wallet, _tokenId, _uri, _points), 
+        abi.encodePacked(_wallet, _tokenId, _uri), 
         block.timestamp + 10 seconds
       )
     });

@@ -16,19 +16,19 @@ contract Pixel8Revealing is Pixel8TestBase {
     pixel8.setPool(pool1);
 
     vm.prank(pool1);
-    pixel8.batchMint(wallet1, 1, 2);
+    pixel8.batchMint(wallet1, 1, 3);
   }
 
   function test_RevealWithAuthorisation_Succeeds() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);
+    _pixel8_reveal(wallet1, 1, "uri1");  
 
     assertEq(pixel8.tokenURI(1), "uri1", "post 1: token uri");
     assertEq(pixel8.revealed(1), true, "post 1: revealed state");
     assertEq(pixel8.numRevealed(), 1, "post 1: revealed count");
 
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 2, "uri2", 1);
+    _pixel8_reveal(wallet1, 2, "uri2");
 
     assertEq(pixel8.tokenURI(2), "uri2", "post 2: token uri");
     assertEq(pixel8.revealed(2), true, "post 2: revealed state");
@@ -39,7 +39,7 @@ contract Pixel8Revealing is Pixel8TestBase {
     vm.recordLogs();
 
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);
+    _pixel8_reveal(wallet1, 1, "uri1");
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
     // 1 metadata update
@@ -56,7 +56,7 @@ contract Pixel8Revealing is Pixel8TestBase {
 
   function test_RevealWithAuthorisation_WhenCallerNotRevealer_Succeeds() public {
     vm.prank(wallet2);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);
+    _pixel8_reveal(wallet1, 1, "uri1");
 
     assertEq(pixel8.tokenURI(1), "uri1", "post 1: token uri");
     assertEq(pixel8.revealed(1), true, "post 1: revealed state");
@@ -65,19 +65,21 @@ contract Pixel8Revealing is Pixel8TestBase {
 
   function test_RevealWithAuthorisation_AwardsPoints() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 3);    
+    _pixel8_reveal(wallet1, 1, "uri1");    
 
     assertEq(pixel8.tokenURI(1), "uri1");
     assertEq(pixel8.revealed(1), true);
 
-    vm.prank(wallet2);
-    _pixel8_reveal(wallet2, 2, "uri2", 0);    
+    vm.startPrank(wallet2);
+    _pixel8_reveal(wallet2, 2, "uri2");    
+    _pixel8_reveal(wallet2, 3, "uri3");    
+    vm.stopPrank();
 
     assertEq(pixel8.tokenURI(2), "uri2");
     assertEq(pixel8.revealed(2), true);
 
-    assertEq(pixel8.points(wallet1), 3);
-    assertEq(pixel8.points(wallet2), 0);
+    assertEq(pixel8.points(wallet1), 5);
+    assertEq(pixel8.points(wallet2), 10);
   }
 
   function test_RevealWithNotAuthorisation_Fails() public {
@@ -87,9 +89,8 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
-      points: 1,
       authSig: _computeOwnerSig(
-        abi.encodePacked(wallet1, uint(1), "uri1", uint(1)),
+        abi.encodePacked(wallet1, uint(1), "uri1"),
         block.timestamp + 10 seconds
       )
     }));
@@ -100,10 +101,9 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
-      points: 1,
       authSig: _computeSig(
         0x123,
-        abi.encodePacked(wallet1, uint(1), "uri1", uint(1)),
+        abi.encodePacked(wallet1, uint(1), "uri1"),
         block.timestamp + 10 seconds
       )
     }));
@@ -116,9 +116,8 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri",
-      points: 1,
       authSig: _computeAuthoriserSig(
-        abi.encodePacked(wallet1, uint(1), "uri", uint(1)),
+        abi.encodePacked(wallet1, uint(1), "uri"),
         block.timestamp - 1 seconds
       )
     }));
@@ -126,25 +125,25 @@ contract Pixel8Revealing is Pixel8TestBase {
 
   function test_RevealWhenSignatureAlreadyUsed_Fails() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);    
+    _pixel8_reveal(wallet1, 1, "uri1");    
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureAlreadyUsed.selector, wallet1));
-    _pixel8_reveal(wallet1, 1, "uri1", 1);        
+    _pixel8_reveal(wallet1, 1, "uri1");        
   }
 
   function test_RevealWhenAlreadyRevealed_Fails() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);    
+    _pixel8_reveal(wallet1, 1, "uri1");    
 
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.AlreadyRevealed.selector, 1));
-    _pixel8_reveal(wallet1, 1, "uri2", 1);    
+    _pixel8_reveal(wallet1, 1, "uri2");    
   }
 
   function test_RevealNonMintedToken_Fails() public {
     vm.prank(wallet1);
-    vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721TokenNotMinted.selector, 3));
-    _pixel8_reveal(wallet1, 3, "uri1", 1);    
+    vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721TokenNotMinted.selector, 4));
+    _pixel8_reveal(wallet1, 4, "uri1");    
   }
 }

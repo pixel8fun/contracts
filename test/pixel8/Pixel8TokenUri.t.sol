@@ -24,7 +24,7 @@ contract Pixel8TokenUri is Pixel8TestBase {
 
   function test_TokenUriReturnsRevealedUri() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri", 1);        
+    _pixel8_reveal(wallet1, 1, "uri");        
 
     assertEq(pixel8.tokenURI(1), "uri");
   }

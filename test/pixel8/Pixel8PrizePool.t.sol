@@ -84,7 +84,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.batchMint(wallet3, 1, 2);
     for (uint i = 1; i <= 2 && i <= _maxToReveal; i++) {
       vm.prank(wallet3);
-      _pixel8_reveal(wallet3, i, "uri1", 1);
+      _pixel8_reveal(wallet3, i, "uri1");
     }
 
     // wallet2 - 3 points
@@ -92,7 +92,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.batchMint(wallet2, 3, 3);
     for (uint i = 3; i <= 5 && i <= _maxToReveal; i++) {
       vm.prank(wallet2);
-      _pixel8_reveal(wallet2, i, "uri1", 1);
+      _pixel8_reveal(wallet2, i, "uri1");
     }
 
     // wallet1 - 5 points
@@ -100,7 +100,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.batchMint(wallet1, 6, 5);
     for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
       vm.prank(wallet1);
-      _pixel8_reveal(wallet1, i, "uri1", 1);
+      _pixel8_reveal(wallet1, i, "uri1");
     }
   }
 }
