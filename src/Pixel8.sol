@@ -496,27 +496,24 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     if (highestNumForceSwaps == _wallet) {
-      return prizePool.pot * 75 / 10; // 7.5%
+      return prizePool.pot * 100 / 1000; // 10%
     }
     
     if (highestTradingVolume == _wallet) {
-      return prizePool.pot * 75 / 10; // 7.5%
+      return prizePool.pot * 100 / 1000; // 10%
     }
 
     for (uint i = 0; i < highestPoints.length; i++) {
       if (highestPoints[i] == _wallet) {
-        /*
-        1st price: 45%
-        2nd price: 25%
-        3rd price: 15%
-        */
         if (i == 0) {
-          return prizePool.pot * 45 / 100;
+          return prizePool.pot * 450 / 1000; // 45%
         } else if (i == 1) {
-          return prizePool.pot * 25 / 100;
+          return prizePool.pot * 250 / 1000; // 25%
         } else if (i == 2) {
-          return prizePool.pot * 15 / 100;
+          return prizePool.pot * 100 / 1000; // 10%
         }
+
+        break;
       }
     }
 
@@ -585,23 +582,26 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // if not in list but it should be, then add it
-    if (i == 3) {
-      if (points[highestPoints[2]] < _points) {
-        highestPoints[2] = _wallet;
-      }
+    if (i == 3 && points[highestPoints[2]] < points[_wallet]) {
+      highestPoints[2] = _wallet;
+      i = 2;
     }
 
-    // resort list using bubble sort
-    for (i = 0; i < 3; i++) {
-      for (uint j = i + 1; j < 3; j++) {
-        if (points[highestPoints[i]] < points[highestPoints[j]]) {
-          address temp = highestPoints[i];
-          highestPoints[i] = highestPoints[j];
-          highestPoints[j] = temp;
-        }
-      }
+    // now check if it should be in the second position
+    if (i == 2 && points[highestPoints[1]] < points[_wallet]) {
+        address temp = highestPoints[1];
+        highestPoints[1] = highestPoints[2];
+        highestPoints[2] = temp;
+        i = 1;
+    } 
+    
+    // now check if it should be in the first position
+    if (i == 1 && points[highestPoints[0]] < points[_wallet]) {
+        address temp = highestPoints[0];
+        highestPoints[0] = highestPoints[1];
+        highestPoints[1] = temp;
     }
-  } 
+  }
 
   // Modifiers
 

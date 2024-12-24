@@ -52,9 +52,9 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(pixel8.highestPoints(1), wallet2);
     assertEq(pixel8.highestPoints(2), wallet3);
 
-    assertEq(pixel8.calculatePrize(wallet1), 0.0003 ether * 45 / 100, "1st points");
-    assertEq(pixel8.calculatePrize(wallet2), 0.0003 ether * 25 / 100, "2nd points");
-    assertEq(pixel8.calculatePrize(wallet3), 0.0003 ether * 15 / 100, "3rd points");
+    assertEq(pixel8.calculatePrize(wallet1), 0.0003 ether * 450 / 1000, "1st points");
+    assertEq(pixel8.calculatePrize(wallet2), 0.0003 ether * 250 / 1000, "2nd points");
+    assertEq(pixel8.calculatePrize(wallet3), 0.0003 ether * 100 / 1000, "3rd points");
   }
 
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
@@ -79,27 +79,24 @@ contract Pixel8PrizePool is Pixel8TestBase {
   // Helper methods
 
   function _mintAndRevealTiles(uint _maxToReveal) internal {
-    // wallet3 - 2 points
+    // wallet3 - 100 points
     vm.prank(pool1);
     pixel8.batchMint(wallet3, 1, 2);
     for (uint i = 1; i <= 2 && i <= _maxToReveal; i++) {
-      vm.prank(wallet3);
       _pixel8_reveal(wallet3, i, "uri1");
     }
 
-    // wallet2 - 3 points
+    // wallet2 - 150 points
     vm.prank(pool1);
     pixel8.batchMint(wallet2, 3, 3);
     for (uint i = 3; i <= 5 && i <= _maxToReveal; i++) {
-      vm.prank(wallet2);
       _pixel8_reveal(wallet2, i, "uri1");
     }
 
-    // wallet1 - 5 points
+    // wallet1 - 250 points
     vm.prank(pool1);
     pixel8.batchMint(wallet1, 6, 5);
     for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
-      vm.prank(wallet1);
       _pixel8_reveal(wallet1, i, "uri1");
     }
   }
