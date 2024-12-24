@@ -18,8 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: recursive
-
       - run: echo "/root/.cargo/bin:/root/.foundry/bin:/root/.bun/bin" >> $GITHUB_PATH
       - run: svm install 0.8.24 && svm use 0.8.24
       # disable safe.directory system to avoid forge install error
