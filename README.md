@@ -1,5 +1,5 @@
-![Build status](https://github.com/pixel8xyz/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/pixel8xyz/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8xyz/contracts)
+![Build status](https://github.com/pixel8fun/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/pixel8fun/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8fun/contracts)
 
 # Pixel8 contracts
 
@@ -26,7 +26,7 @@ Technicals details:
 * ERC2981 royalty standard.
 * ERC4906 metadata updates.
 * ECDSA signature verification to allow for anyone to mint/reveal with authorisation.
-* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/pixel8xyz/contracts).
+* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/pixel8fun/contracts).
 
 ## On-chain addresses
 

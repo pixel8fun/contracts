@@ -30,11 +30,6 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   PoolCurve public curve;
   PoolStatus public status;
 
-  /**
-   * @dev Wheter trading is enabled or not.
-   */
-  bool public enabled = true;
-
   // Constructor
 
   /**
@@ -75,13 +70,6 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   // ---------------------------------------------------------------
   // Config
   // ---------------------------------------------------------------
-
-  /**
-   * @dev Set whether trading is enabled.
-   */
-  function setEnabled(bool _enabled) external onlyOwner {
-    enabled = _enabled;
-  }
 
   /**
    * @dev Get the curve config and status.
@@ -140,10 +128,6 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
    * @param numItems Number of NFTs to buy.
    */
   function _preBuy(uint numItems) private returns (BuyQuote memory quote) {
-    if (!enabled) {
-      revert LibErrors.TradingDisabled();
-    }
-
     address sender = payable(msg.sender);
 
     quote = getBuyQuote(numItems);
@@ -215,10 +199,6 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
 
 
   function sell(uint[] calldata tokenIds) external returns (SellQuote memory quote) {
-    if (!enabled) {
-      revert LibErrors.TradingDisabled();
-    }
-
     address sender = payable(msg.sender);
 
     quote = getSellQuote(tokenIds.length);

@@ -65,11 +65,6 @@ library LibErrors {
   error InvalidMintEndId(uint id);
 
   /**
-   * @dev Pool trading is disabled.
-   */
-  error TradingDisabled();
-
-  /**
    * @dev The NFT is not in the pool.
    */
   error NftNotInPool(uint256 id);
