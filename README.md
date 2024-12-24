@@ -1,4 +1,5 @@
 ![Build status](https://github.com/pixel8fun/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/pixel8fun/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8fun/contracts)
 
 # Pixel8 contracts
 
