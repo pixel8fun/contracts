@@ -49,21 +49,21 @@ contract Pixel8BatchTransferRange is Pixel8TestBase {
     assertEq(pixel8.ownerOf(4), wallet2);
     assertEq(pixel8.ownerOf(3), wallet2);
 
-    // Check lastPoolBuyTime is updated when transferred from pool
-    assertEq(pixel8.lastPoolBuyTime(4), currentTime);
-    assertEq(pixel8.lastPoolBuyTime(3), currentTime);
+    // Check lastCooldownStartTime is updated when transferred from pool
+    assertEq(pixel8.lastCooldownStartTime(4), currentTime);
+    assertEq(pixel8.lastCooldownStartTime(3), currentTime);
   }
 
-  function test_Pixel8BatchTransferRange_NotFromPool_DoesNotUpdateLastPoolBuyTime() public {
-    uint256 initialTime = pixel8.lastPoolBuyTime(4);
+  function test_Pixel8BatchTransferRange_NotFromPool_DoesNotUpdateLastCooldownStartTime() public {
+    uint256 initialTime = pixel8.lastCooldownStartTime(4);
 
     // Transfer from wallet1 to wallet2 (not from pool)
     vm.prank(wallet1);
     pixel8.batchTransferRange(wallet1, wallet2, 2);
 
-    // Check lastPoolBuyTime remains unchanged
-    assertEq(pixel8.lastPoolBuyTime(4), initialTime);
-    assertEq(pixel8.lastPoolBuyTime(3), initialTime);
+    // Check lastCooldownStartTime remains unchanged
+    assertEq(pixel8.lastCooldownStartTime(4), initialTime);
+    assertEq(pixel8.lastCooldownStartTime(3), initialTime);
   }
 
   function test_Pixel8BatchTransferRangeIfNotAuthorised_Fails() public {

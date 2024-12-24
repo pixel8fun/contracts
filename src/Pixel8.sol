@@ -115,9 +115,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   mapping(address => bool) public prizeClaimed;
 
   /**
-   * @dev Tracks when each token was last bought from the pool
+   * @dev When each token's last cooldown period started
    */
-  mapping(uint256 => uint256) public lastPoolBuyTime;
+  mapping(uint256 => uint256) public lastCooldownStartTime;
 
   /**
    * @dev Game points for each wallet.
@@ -311,7 +311,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     emit BatchMetadataUpdate(1, totalSupply);
   }
 
-  // Minting
+  // Authoriser
 
   /**
    * @dev Set the authoriser.
@@ -321,38 +321,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     authoriser = _authoriser;
   }
 
-  function _addPlayerPoints(address _wallet, uint _points) private {
-    points[_wallet] += _points;
-
-    // update highest points list
-
-    // first go through list and see if wallet is already a high scorer
-    uint i = 0;
-    while (i < 3) {
-      if (highestPoints[i] == _wallet) {
-        break;
-      }
-      i++;
-    }
-
-    // if not in list but it should be, then add it
-    if (i == 3) {
-      if (points[highestPoints[2]] < _points) {
-        highestPoints[2] = _wallet;
-      }
-    }
-
-    // resort list using bubble sort
-    for (i = 0; i < 3; i++) {
-      for (uint j = i + 1; j < 3; j++) {
-        if (points[highestPoints[i]] < points[highestPoints[j]]) {
-          address temp = highestPoints[i];
-          highestPoints[i] = highestPoints[j];
-          highestPoints[j] = temp;
-        }
-      }
-    }
-  } 
 
   // Pool functions 
 
@@ -369,7 +337,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   function batchMint(address _to, uint _startId, uint _count) external override onlyPool {
     _safeBatchMint(_to, _startId, _count, "");
-    _updateLastPoolBuyTimeRange(_startId, _count);
+    _updateLastCooldownStartTimeRange(_startId, _count);
   }
 
   /**
@@ -378,7 +346,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   function batchTransferIds(address _from, address _to, uint[] calldata _tokenIds) external override {
     _safeBatchTransfer(msg.sender, _from, _to, _tokenIds, "");
     if (_from == pool) {
-      _updateLastPoolBuyTimeIds(_tokenIds);
+      _updateLastCooldownStartTimeIds(_tokenIds);
     }
   }
 
@@ -388,7 +356,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   function batchTransferRange(address _from, address _to, uint _numTokens) external override {
     uint256 firstTransferredId = _safeBatchTransfer(msg.sender, _from, _to, _numTokens, "");
     if (_from == pool) {
-      _updateLastPoolBuyTimeRange(firstTransferredId, _numTokens);
+      _updateLastCooldownStartTimeRange(firstTransferredId, _numTokens);
     }
   }
 
@@ -424,7 +392,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // Check cooldown period
-    if (block.timestamp - lastPoolBuyTime[toTokenId] < 1 hours) {
+    if (block.timestamp - lastCooldownStartTime[toTokenId] < 1 hours) {
       revert LibErrors.TokenOnCooldown(toTokenId);
     }
 
@@ -539,25 +507,58 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
   /**
-   * @dev Updates lastPoolBuyTime for a range of token IDs.
+   * @dev Updates lastCooldownStartTime for a range of token IDs.
    * @param _startId The starting token ID
    * @param _count The number of consecutive tokens
    */
-  function _updateLastPoolBuyTimeRange(uint256 _startId, uint256 _count) private {
+  function _updateLastCooldownStartTimeRange(uint256 _startId, uint256 _count) private {
     for (uint i = 0; i < _count; i++) {
-      lastPoolBuyTime[_startId + i] = block.timestamp;
+      lastCooldownStartTime[_startId + i] = block.timestamp;
     }
   }
 
   /**
-   * @dev Updates lastPoolBuyTime for specific token IDs.
+   * @dev Updates lastCooldownStartTime for specific token IDs.
    * @param _tokenIds Array of token IDs to update
    */
-  function _updateLastPoolBuyTimeIds(uint256[] calldata _tokenIds) private {
+  function _updateLastCooldownStartTimeIds(uint256[] calldata _tokenIds) private {
     for (uint i = 0; i < _tokenIds.length; i++) {
-      lastPoolBuyTime[_tokenIds[i]] = block.timestamp;
+      lastCooldownStartTime[_tokenIds[i]] = block.timestamp;
     }
   }  
+
+  function _addPlayerPoints(address _wallet, uint _points) private {
+    points[_wallet] += _points;
+
+    // update highest points list
+
+    // first go through list and see if wallet is already a high scorer
+    uint i = 0;
+    while (i < 3) {
+      if (highestPoints[i] == _wallet) {
+        break;
+      }
+      i++;
+    }
+
+    // if not in list but it should be, then add it
+    if (i == 3) {
+      if (points[highestPoints[2]] < _points) {
+        highestPoints[2] = _wallet;
+      }
+    }
+
+    // resort list using bubble sort
+    for (i = 0; i < 3; i++) {
+      for (uint j = i + 1; j < 3; j++) {
+        if (points[highestPoints[i]] < points[highestPoints[j]]) {
+          address temp = highestPoints[i];
+          highestPoints[i] = highestPoints[j];
+          highestPoints[j] = temp;
+        }
+      }
+    }
+  } 
 
   // Modifiers
 

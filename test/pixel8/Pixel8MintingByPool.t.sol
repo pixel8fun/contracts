@@ -32,9 +32,9 @@ contract Pixel8MintingByPool is Pixel8TestBase {
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 0), 1);
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 1), 2);
 
-    // Check lastPoolBuyTime is set correctly
-    assertEq(pixel8.lastPoolBuyTime(1), currentTime);
-    assertEq(pixel8.lastPoolBuyTime(2), currentTime);
+    // Check lastCooldownStartTime is set correctly
+    assertEq(pixel8.lastCooldownStartTime(1), currentTime);
+    assertEq(pixel8.lastCooldownStartTime(2), currentTime);
   }
 
   function test_MintByPool_InvokesReceiver() public {
