@@ -1,0 +1,3 @@
+When refactoring code:
+
+*  Add existing comments to the code where it's unchanged and add new comments in the same style and frequency as existing comments.

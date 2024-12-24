@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
+contract Pixel8BatchTransferIds is Pixel8TestBase {
   function setUp() public override {
     super.setUp();
 
@@ -27,7 +27,7 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     return ids;
   }
 
-  function test_Pixel8NftBatchTransferIds_ByOwner_Succeeds() public {
+  function test_Pixel8BatchTransferIds_ByOwner_Succeeds() public {
     uint[] memory ids = _getIdsToTransfer();
 
     vm.prank(wallet1);
@@ -47,17 +47,35 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     assertEq(pixel8.tokenOfOwnerByIndex(wallet2, 2), 2);
   }
 
-  function test_Pixel8NftBatchTransferIds_ByPool_Succeeds() public {
+  function test_Pixel8BatchTransferIds_ByPool_Succeeds() public {
     uint[] memory ids = _getIdsToTransfer();
+    uint256 currentTime = block.timestamp;
 
     vm.prank(pool1);
     pixel8.batchTransferIds(wallet1, wallet2, ids);
 
     assertEq(pixel8.ownerOf(1), wallet2);
     assertEq(pixel8.ownerOf(2), wallet2);
+
+    // Check lastCooldownStartTime is updated when transferred from pool
+    assertEq(pixel8.lastCooldownStartTime(1), currentTime);
+    assertEq(pixel8.lastCooldownStartTime(2), currentTime);
   }
 
-  function test_Pixel8NftBatchTransferIdsIfNotAuthorised_Fails() public {
+  function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastPoolBuyTime() public {
+    uint[] memory ids = _getIdsToTransfer();
+    uint256 initialTime = pixel8.lastCooldownStartTime(1);
+
+    // Transfer from wallet1 to wallet2 (not from pool)
+    vm.prank(wallet1);
+    pixel8.batchTransferIds(wallet1, wallet2, ids);
+
+    // Check lastCooldownStartTime remains unchanged
+    assertEq(pixel8.lastCooldownStartTime(1), initialTime);
+    assertEq(pixel8.lastCooldownStartTime(2), initialTime);
+  }
+
+  function test_Pixel8BatchTransferIdsIfNotAuthorised_Fails() public {
     uint[] memory ids = _getIdsToTransfer();
 
     vm.prank(wallet2);
@@ -65,7 +83,7 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     pixel8.batchTransferIds(wallet1, wallet2, ids);
   }
 
-  function test_Pixel8NftBatchTransferIds_IfAllAuthorised_Succeeds() public {
+  function test_Pixel8BatchTransferIds_IfAllAuthorised_Succeeds() public {
     uint[] memory ids = _getIdsToTransfer();
 
     vm.startPrank(wallet1);
@@ -80,7 +98,7 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     assertEq(pixel8.ownerOf(2), wallet2);
   }
 
-  function test_Pixel8NftBatchTransferIds_IfNotAllAuthorised_Succeeds() public {
+  function test_Pixel8BatchTransferIds_IfNotAllAuthorised_Succeeds() public {
     uint[] memory ids = _getIdsToTransfer();
 
     vm.startPrank(wallet1);
@@ -92,7 +110,7 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     pixel8.batchTransferIds(wallet1, wallet2, ids);
   }
 
-  function test_Pixel8NftBatchTransferIds_ToZeroAddress_Fails() public {
+  function test_Pixel8BatchTransferIds_ToZeroAddress_Fails() public {
     uint[] memory ids = _getIdsToTransfer();
 
     vm.prank(wallet1);
@@ -100,7 +118,7 @@ contract Pixel8NftBatchTransferIds is Pixel8NftTestBase {
     pixel8.batchTransferIds(wallet1, address(0), ids);
   }
 
-  function test_Pixel8NftBatchTransfer_InvokesReceiver() public {
+  function test_Pixel8BatchTransfer_InvokesReceiver() public {
     GoodERC721Receiver good = new GoodERC721Receiver();
 
     uint[] memory ids = _getIdsToTransfer();

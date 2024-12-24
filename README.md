@@ -1,5 +1,5 @@
-![Build status](https://github.com/pixel8xyz/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/pixel8xyz/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8xyz/contracts)
+![Build status](https://github.com/pixel8fun/contracts/actions/workflows/ci.yml/badge.svg?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/pixel8fun/contracts/badge.svg?t=wvNXqi)](https://coveralls.io/github/pixel8fun/contracts)
 
 # Pixel8 contracts
 
@@ -12,15 +12,16 @@ Features:
   * Exponential price curve.
   * Pool mints NFTs on-demand until no more left to mint. Initial buyers thus recieve minted freshly NFTs.
   * Sellers sell NFTs into pool, and subsequent buyers recieve these NFTs until they run out, after which the pool again mints new NFTs.
-* To encourage holders to mint and reveal NFTs a lottery ticket system is implemented:
-  * A percentage of every NFT trade goes into a lottery pot, accumulating over time.
-  * Every permissioned mint will award 3 lottery tickets to the caller.
-  * Every permissioned reveal will award 1 lottery ticket to the caller.
-  * After all tiles have been minted and revealed the lottery will be drawn and a small no. of random tickets will be selected as winners.
-    * These winning tickets will then be able to withdraw their share of the lottery pot.
-  * Notes:
-    * Lottery tickets themselves are a separate ERC721 collection.
-    * The lottery has a deadline (Jan 1st, 2025), after which the lottery can be drawn even if not all tiles have been minted and revealed. This is to handle the case where for some reason the puzzle can't be finished.
+* Force-swapping
+  * The purpose is to ensure a game can always be finished if atleast one player keeps playing by prevent "forever lost" tiles. 
+  * Also provides for an interesting game dynamic!
+  * Force swaps have a cost - fee goes into prize pool.
+  * Users can force-swap tiles with another user (except those held by the pool).
+  * Tiles have a predefined cooldown period when they've just been swapped or bought from the pool - within this period they cannot be swapped.
+* To encourage holders to mint and reveal NFTs prizes are awarded:
+  * A percentage of every NFT trade goes into a prize pool, accumulating over time.
+  * Every permissioned reveal will award points to the revealer.
+  * After a predefined reveal threshold is reached prizes are given to the top 3 point scorers, biggest trader and biggest force swapper.
 
 Technicals details:
 
@@ -30,7 +31,7 @@ Technicals details:
 * ERC2981 royalty standard.
 * ERC4906 metadata updates.
 * ECDSA signature verification to allow for anyone to mint/reveal with authorisation.
-* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/pixel8xyz/contracts).
+* Extensive [test suite](./test/) and [excellent code coverage](https://coveralls.io/github/pixel8fun/contracts).
 
 ## On-chain addresses
 
@@ -79,7 +80,6 @@ $ bun view-coverage
 
 _Notes:_
 
-* _The `owner`, `minter`, `revealer` and `pool` roles are all set to be the deployment wallet's address._
 * _[CREATE2](https://book.getfoundry.sh/tutorials/create2-tutorial) is used for deployment, so the address will always be the same as long as the deployment wallet and bytecode are the same, irrespective of chain, nonce, etc._
 
 ### Local (anvil)
@@ -122,7 +122,7 @@ $ bun verify-testnet
 AGPLv3 - see [LICENSE.md](LICENSE.md)
 
 Pixel8 smart contracts
-Copyright (C) 2024  [v42 Labs](https://v42.space)
+Copyright (C) 2024  [Pixel8 team](https://pixel8.art)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by

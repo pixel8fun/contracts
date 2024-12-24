@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 import {console2 as c} from "forge-std/Test.sol";
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 
 
-contract Pixel8NftSetPool is Pixel8NftTestBase {
+contract Pixel8SetPool is Pixel8TestBase {
   function test_SetPoolWhenOwner_Succeeds() public {
     vm.prank(owner1);
     pixel8.setPool(address(0x789));
@@ -14,8 +14,8 @@ contract Pixel8NftSetPool is Pixel8NftTestBase {
   }
 
   function test_SetPoolWhenNotOwner_Fails() public {
-    vm.prank(minter1);
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter1));
+    vm.prank(authoriser1);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, authoriser1));
     pixel8.setPool(address(0x789));
 
     address random = address(0x8876);

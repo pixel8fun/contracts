@@ -797,8 +797,9 @@ contract Erc721Base is TestBase01 {
     _mintTokensForBatchTransferRangeTest();
 
     vm.prank(wallet1);
-    b.batchTransfer(wallet1, wallet2, 2, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 2, "");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 4");
     assertEq(b.totalSupply(), 5);
     
     assertEq(b.tokenByIndex(0), 1);
@@ -826,8 +827,9 @@ contract Erc721Base is TestBase01 {
     _mintTokensForBatchTransferRangeTest();
 
     vm.prank(wallet1);
-    b.batchTransfer(wallet1, wallet2, 4, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 4, "");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 4");
     assertEq(b.totalSupply(), 5);
   
     assertEq(b.tokenByIndex(0), 1);
@@ -852,8 +854,9 @@ contract Erc721Base is TestBase01 {
     _mintTokensForBatchTransferRangeTest();
 
     vm.prank(wallet1);
-    b.batchTransfer(wallet1, wallet2, 0, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 0, "");
 
+    assertEq(firstTransferredId, 0, "First transferred token ID should be 0 when transferring none");
     assertEq(b.totalSupply(), 5);
 
     assertEq(b.tokenByIndex(0), 1);
@@ -873,6 +876,30 @@ contract Erc721Base is TestBase01 {
     assertEq(b.balanceOf(wallet2), 1);
   }
 
+  function test_SafeBatchTransferRange_TransferOne() public {
+    _mintTokensForBatchTransferRangeTest();
+
+    vm.prank(wallet1);
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 1, "");
+
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 4");
+    assertEq(b.ownerOf(4), wallet2);
+    assertEq(b.balanceOf(wallet1), 3);
+    assertEq(b.balanceOf(wallet2), 2);
+  }
+
+  function test_SafeBatchTransferRange_TransferLastToken() public {
+    _mintTokensForBatchTransferRangeTest();
+
+    vm.prank(wallet1);
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 1, "");
+
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 4");
+    assertEq(b.ownerOf(4), wallet2);
+    assertEq(b.balanceOf(wallet1), 3);
+    assertEq(b.balanceOf(wallet2), 2);
+  }
+
   function test_SafeBatchTransferRange_IfTokensApprovedIndividually() public {
     _mintTokensForBatchTransferRangeTest();
 
@@ -882,8 +909,9 @@ contract Erc721Base is TestBase01 {
     vm.stopPrank();
 
     vm.prank(wallet2);
-    b.batchTransfer(wallet1, wallet2, 2, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 2, "");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 3");
     assertEq(b.ownerOf(3), wallet2);
     assertEq(b.ownerOf(4), wallet2);
   }
@@ -907,8 +935,9 @@ contract Erc721Base is TestBase01 {
     b.setApprovalForAll(wallet2, true);
 
     vm.prank(wallet2);
-    b.batchTransfer(wallet1, wallet2, 2, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 2, "");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 3");
     assertEq(b.ownerOf(3), wallet2);
     assertEq(b.ownerOf(4), wallet2);
   }
@@ -922,8 +951,9 @@ contract Erc721Base is TestBase01 {
     vm.stopPrank();
 
     vm.prank(wallet2);
-    b.batchTransfer(wallet1, wallet2, 2, "");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, wallet2, 2, "");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 4");
     assertEq(b.getApproved(3), address(0));
     assertEq(b.getApproved(4), address(0));
   }
@@ -974,8 +1004,9 @@ contract Erc721Base is TestBase01 {
     address good = address(new GoodERC721Receiver());
 
     vm.prank(wallet1);
-    b.batchTransfer(wallet1, good, 2, "test");
+    uint256 firstTransferredId = b.batchTransfer(wallet1, good, 2, "test");
 
+    assertEq(firstTransferredId, 4, "First transferred token ID should be 3");
     assertEq(b.ownerOf(3), good);
     assertEq(b.ownerOf(4), good);
 

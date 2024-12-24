@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
-import { Pixel8NftTestBase } from "./Pixel8NftTestBase.sol";
+import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { IERC721Errors } from "src/IERC721Errors.sol";
 
-contract Pixel8NftMintingByPool is Pixel8NftTestBase {
+contract Pixel8MintingByPool is Pixel8TestBase {
   function setUp() public override {
     super.setUp();
 
@@ -16,6 +16,7 @@ contract Pixel8NftMintingByPool is Pixel8NftTestBase {
   }
 
   function test_MintByPool_Succeeds() public {
+    uint256 currentTime = block.timestamp;
     vm.prank(pool1);
     pixel8.batchMint(wallet1, 1, 2);
 
@@ -30,6 +31,10 @@ contract Pixel8NftMintingByPool is Pixel8NftTestBase {
 
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 0), 1);
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 1), 2);
+
+    // Check lastCooldownStartTime is set correctly
+    assertEq(pixel8.lastCooldownStartTime(1), currentTime);
+    assertEq(pixel8.lastCooldownStartTime(2), currentTime);
   }
 
   function test_MintByPool_InvokesReceiver() public {
@@ -56,8 +61,8 @@ contract Pixel8NftMintingByPool is Pixel8NftTestBase {
     vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, owner1));
     pixel8.batchMint(wallet1, 1, 2);
 
-    vm.prank(minter1);
-    vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, minter1));
+    vm.prank(authoriser1);
+    vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, authoriser1));
     pixel8.batchMint(wallet1, 1, 2);
   }
 

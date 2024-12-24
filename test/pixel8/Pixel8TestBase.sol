@@ -4,11 +4,10 @@ pragma solidity ^0.8.24;
 import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Strings } from "openzeppelin/utils/Strings.sol";
 import { Pixel8 } from "src/Pixel8.sol";  
-import { LotteryNFT } from "src/LotteryNFT.sol";
 import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 
-abstract contract Pixel8NftTestBase is TestBase01 {  
+abstract contract Pixel8TestBase is TestBase01 {  
   using Strings for uint256;
 
   uint pool1_key = 0x123456;
@@ -30,6 +29,6 @@ abstract contract Pixel8NftTestBase is TestBase01 {
     return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
   }
 
-  function testPixel8NftTestBase_ExcludeFromCoverage() public {}  
+  function testPixel8TestBase_ExcludeFromCoverage() public {}  
 }
 

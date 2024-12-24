@@ -65,47 +65,57 @@ library LibErrors {
   error InvalidMintEndId(uint id);
 
   /**
-   * @dev Pool trading is disabled.
+   * @dev The NFT is not in the pool.
    */
-  error TradingDisabled();
+  error NftNotInPool(uint256 id);
 
   /**
-   * @dev The lottery has already been drawn.
+   * @dev The game is not yet over.
    */
-  error LotteryAlreadyDrawn();
+  error GameNotOver();
 
   /**
-   * @dev The given ticket cannot claim winnings.
+   * @dev The wallet has already claimed its prize.
    */
-  error LotteryCannotClaimWinnings(uint ticket);
+  error PrizeAlreadyClaimed(address wallet);
 
   /**
-   * @dev The lottery cannot be drawn yet.
+   * @dev The address is invalid.
    */
-  error LotteryCannotBeDrawnYet();
+  error InvalidAddress(address addr);
 
   /**
-   * @dev The lottery ticket NFT has already been set.
+   * @dev The pool does not exist.
    */
-  error LotteryNFTAlreadySet();
+  error PoolDoesNotExist(address nft);
 
   /**
-   * @dev The lottery ticket NFT is invalid.
+   * @dev The pool already exists.
    */
-  error LotteryNFTInvalid();
+  error PoolAlreadyExists(address nft);
 
   /**
-  * @dev Lottery no. of winning tickets already set.
-  */
-  error LotteryNumWinningTicketsAlreadySet();
-
-  /**
-  * @dev Lottery no. of winning tickets not yet set.
-  */
-  error LotteryNumWinningTicketsNotSet();
-
-  /**
-   * @dev Invalid number for no. of winning tickets in lottery.
+   * @dev The pool has already been set.
    */
-  error LotteryInvalidNumWinningTickets();
+  error PoolAlreadySet();
+
+  /**
+   * @dev The token id is invalid.
+   */
+  error InvalidTokenId(uint256 tokenId);
+
+  /**
+   * @dev The token cannot be force swapped because it is owned by the pool.
+   */
+  error TokenOwnedByPool(uint256 tokenId);
+
+  /**
+   * @dev The token cannot be force swapped because it is on cooldown.
+   */
+  error TokenOnCooldown(uint256 tokenId);
+
+  /**
+   * @dev The game is over.
+   */
+  error GameOver();
 }
