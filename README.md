@@ -6,7 +6,7 @@ Smart contracts for [Pixel8](https://pixel8.art).
 
 Features:
 
-  * **Fully on-chain metadata (including images)!**
+* **Fully on-chain metadata (including images)!**
 * `MintSwapPool` pool inspired by [SudoSwap](https://github.com/sudoswap/lssvm).
   * Exponential price curve.
   * Pool mints NFTs on-demand until no more left to mint. Initial buyers thus recieve minted freshly NFTs.
