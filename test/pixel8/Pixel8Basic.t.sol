@@ -15,6 +15,7 @@ contract Pixel8Basic is Pixel8TestBase {
     assertEq(pixel8.authoriser(), authoriser1, "authoriser");
     assertEq(pixel8.pool(), address(0), "pool");
     assertEq(pixel8.defaultImage(), "img", "defaultImg");
+    assertEq(pixel8.forceSwapCost(), 0.01 ether, "forceSwapCost");
 
     Pixel8.DevRoyalties memory devRoyalties = pixel8.getDevRoyalties();
     assertEq(devRoyalties.feeBips, 1000, "devRoyalties.feeBips");

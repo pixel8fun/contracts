@@ -147,6 +147,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   address public highestNumForceSwaps;
 
   /**
+   * @dev Cost in wei to perform a force swap
+   */
+  uint public forceSwapCost;
+
+  /**
    * @dev The trading volume for each wallet.
    */
   mapping(address => uint) public tradingVolume;
@@ -175,6 +180,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint96 prizePoolFeeBips;
     /** Game over reveal threshold - the game has ended once the given on. of tiles have been revealed.*/
     uint gameOverRevealThreshold;
+    /** Cost in wei to perform a force swap */
+    uint forceSwapCost;
   }
   
   /**
@@ -189,6 +196,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
     devRoyalties.receiver = _config.devRoyaltyReceiver;
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
+    forceSwapCost = _config.forceSwapCost;
 
     _setDefaultRoyalty(address(this), devRoyalties.feeBips + prizePool.feeBips);
   }
@@ -275,7 +283,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
     _reveal(_params.tokenId, _params.uri);
 
-    _addPlayerPoints(_params.wallet, 5);
+    _addPlayerPoints(_params.wallet, 50);
   }
 
   /**
@@ -374,7 +382,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @param fromTokenId The token ID owned by from address
    * @param toTokenId The token ID to swap with
    */
-  function forceSwap(address from, uint256 fromTokenId, uint256 toTokenId) external {
+  function forceSwap(address from, uint256 fromTokenId, uint256 toTokenId) external payable {
+    // Check that msg.value is sufficient
+    if (msg.value < forceSwapCost) {
+      revert LibErrors.InsufficientSenderFunds(msg.sender, forceSwapCost, msg.value);
+    }
+
     // Check that fromTokenId is owned by from
     if (ownerOf(fromTokenId) != from) {
       revert LibErrors.Unauthorized(from);

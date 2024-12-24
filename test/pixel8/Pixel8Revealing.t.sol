@@ -78,8 +78,8 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(pixel8.tokenURI(2), "uri2");
     assertEq(pixel8.revealed(2), true);
 
-    assertEq(pixel8.points(wallet1), 5);
-    assertEq(pixel8.points(wallet2), 10);
+    assertEq(pixel8.points(wallet1), 50);
+    assertEq(pixel8.points(wallet2), 100);
   }
 
   function test_RevealWithNotAuthorisation_Fails() public {

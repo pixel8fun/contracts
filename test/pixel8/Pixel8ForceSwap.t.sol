@@ -32,11 +32,16 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
         // Wait for token cooldown
         vm.warp(block.timestamp + 1 hours);
+
+        // add enough funds to each wallet
+        vm.deal(alice, 0.02 ether);
+        vm.deal(bob, 0.02 ether);
+        vm.deal(eve, 0.02 ether);
     }
 
     function test_ForceSwap_Basic() public {
         vm.prank(alice);
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
 
         assertEq(pixel8.ownerOf(ALICE_TOKEN), bob);
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
@@ -44,28 +49,34 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.highestNumForceSwaps(), alice);
     }
 
+    function test_ForceSwap_RevertWhenInsufficientPayment() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(LibErrors.InsufficientSenderFunds.selector, alice, 0.01 ether, 0.005 ether));
+        pixel8.forceSwap{value: 0.005 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
+    }
+
     function test_ForceSwap_RevertWhenSwappingUnownedToken() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, alice));
-        pixel8.forceSwap(alice, BOB_TOKEN, ALICE_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, BOB_TOKEN, ALICE_TOKEN);
     }
 
     function test_ForceSwap_RevertWhenUnauthorizedCaller() public {
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, bob));
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
     }
 
     function test_ForceSwap_RevertWhenSwappingSameToken() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidTokenId.selector, ALICE_TOKEN));
-        pixel8.forceSwap(alice, ALICE_TOKEN, ALICE_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, ALICE_TOKEN);
     }
 
     function test_ForceSwap_RevertWhenSwappingWithPoolToken() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOwnedByPool.selector, POOL_TOKEN));
-        pixel8.forceSwap(alice, ALICE_TOKEN, POOL_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, POOL_TOKEN);
     }
 
     function test_ForceSwap_RevertWhenTokenOnCooldown() public {
@@ -77,7 +88,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOnCooldown.selector, BOB_TOKEN));
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
     }
 
     function test_ForceSwap_RevertWhenTokenCooldownResetByPool() public {
@@ -94,13 +105,13 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Alice tries to force swap but fails due to cooldown
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOnCooldown.selector, BOB_TOKEN));
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
     }
 
     function test_ForceSwap_HighestForceSwapsUpdates() public {
         // Alice does first swap
         vm.prank(alice);
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
         assertEq(pixel8.highestNumForceSwaps(), alice);
 
         // Fast forward 1 hour to bypass cooldown
@@ -108,13 +119,13 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
         // Bob does two swaps
         vm.prank(bob);
-        pixel8.forceSwap(bob, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, BOB_TOKEN);
 
         // Fast forward 1 hour to bypass cooldown
         vm.warp(block.timestamp + 1 hours);
 
         vm.prank(bob);
-        pixel8.forceSwap(bob, BOB_TOKEN, ALICE_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(bob, BOB_TOKEN, ALICE_TOKEN);
 
         assertEq(pixel8.numForceSwaps(bob), 2);
         assertEq(pixel8.highestNumForceSwaps(), bob);
@@ -123,7 +134,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     function test_ForceSwap_CooldownResetAfterSwap() public {
         // Initial force swap
         vm.prank(alice);
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
 
         // Check cooldown times were reset
         assertEq(pixel8.lastCooldownStartTime(ALICE_TOKEN), block.timestamp);
@@ -135,14 +146,14 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Bob tries to force swap but fails due to cooldown
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOnCooldown.selector, BOB_TOKEN));
-        pixel8.forceSwap(bob, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, BOB_TOKEN);
 
         // Fast forward another 30 minutes (total 1 hour)
         vm.warp(block.timestamp + 30 minutes);
 
         // Now Bob can force swap
         vm.prank(bob);
-        pixel8.forceSwap(bob, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, BOB_TOKEN);
 
         // Check cooldown times were reset again
         assertEq(pixel8.lastCooldownStartTime(ALICE_TOKEN), block.timestamp);
@@ -152,7 +163,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     function test_ForceSwap_CanSwapOwnTokenDuringCooldown() public {
         // Initial force swap to put BOB_TOKEN in cooldown
         vm.prank(alice);
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
 
         // Check cooldown times were set
         assertEq(pixel8.lastCooldownStartTime(ALICE_TOKEN), block.timestamp);
@@ -164,7 +175,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Bob should be able to force swap ALICE_TOKEN with Eve's token
         // even though ALICE_TOKEN is in cooldown
         vm.prank(bob);
-        pixel8.forceSwap(bob, ALICE_TOKEN, EVE_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, EVE_TOKEN);
 
         // Verify ownership
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
@@ -176,7 +187,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.recordLogs();
         
         vm.prank(alice);
-        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length, 3, "Should emit three events (two transfer + 1 swap)");
