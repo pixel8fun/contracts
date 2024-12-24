@@ -13,13 +13,13 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
   // getTotalNftsForSale - initial
 
-  function test_GetTotalNftsForSale_Initial() public view {
+  function test_Pool_GetTotalNftsForSale_Initial() public view {
     assertEq(pool.getTotalNftsForSale(pixel8_addr), 11);
   }
 
   // getBuyQuote - initial
 
-  function test_GetBuyQuote_Initial_BuyOne() public view {
+  function test_Pool_GetBuyQuote_Initial_BuyOne() public view {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
     assertEq(uint(q.error), uint(QuoteError.NONE));
     assertEq(q.newSpotPrice, 2 gwei);
@@ -31,7 +31,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.inputValue, inputValue + fee);
   }
 
-  function test_GetBuyQuote_Initial_BuyAll() public view {
+  function test_Pool_GetBuyQuote_Initial_BuyAll() public view {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 11);
     assertEq(uint(q.error), uint(QuoteError.NONE), "error code");
     assertEq(q.newSpotPrice, 2048 gwei /* 2^11 */, "new spot price");
@@ -55,17 +55,17 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.inputValue, inputValue + fee, "total");
   }
 
-  function test_GetBuyQuote_Initial_BuyTooMuch() public view {
+  function test_Pool_GetBuyQuote_Initial_BuyTooMuch() public view {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 12);
     assertEq(uint(q.error), uint(QuoteError.INSUFFICIENT_NFTS));
   }
 
-  function test_GetBuyQuote_Initial_BuyNone() public view {
+  function test_Pool_GetBuyQuote_Initial_BuyNone() public view {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 0);
     assertEq(uint(q.error), uint(QuoteError.INVALID_NUMITEMS));
   }
 
-  function test_GetBuyQuote_Initial_NewSpotPriceOverflow() public view {
+  function test_Pool_GetBuyQuote_Initial_NewSpotPriceOverflow() public view {
     // 2^63    
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 100);
     assertEq(uint(q.error), uint(QuoteError.SPOT_PRICE_OVERFLOW));
@@ -73,7 +73,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
   // buy - initial
 
-  function test_Buy_Initial_BuyOne() public {
+  function test_Pool_Buy_Initial_BuyOne() public {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
 
     wallet1.transfer(q.inputValue); // exact funds
@@ -101,7 +101,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee, "received fee");
   }
 
-  function test_Buy_Initial_BuyAll() public {
+  function test_Pool_Buy_Initial_BuyAll() public {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 11);
 
     wallet1.transfer(1 ether);
@@ -133,7 +133,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee, "post: received fee");
   }
 
-  function test_Buy_Initial_BuyOne_InsufficientFunds() public {
+  function test_Pool_Buy_Initial_BuyOne_InsufficientFunds() public {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
 
     wallet1.transfer(q.inputValue - 1);
@@ -142,7 +142,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     pool.buy{value: wallet1.balance}(pixel8_addr, 1);
   }
 
-  function test_Buy_Initial_BuyOne_TooMuchFunds() public {
+  function test_Pool_Buy_Initial_BuyOne_TooMuchFunds() public {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
 
     wallet1.transfer(q.inputValue + 1);
@@ -153,20 +153,20 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(wallet1.balance, 1);
   }
 
-  function test_Buy_Initial_BuyTooMuch() public {
+  function test_Pool_Buy_Initial_BuyTooMuch() public {
     wallet1.transfer(1 ether);
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.BadQuote.selector, wallet1, QuoteError.INSUFFICIENT_NFTS));
     pool.buy{value: wallet1.balance}(pixel8_addr, 12);
   }
 
-  function test_Buy_Initial_BuyNone() public {
+  function test_Pool_Buy_Initial_BuyNone() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.BadQuote.selector, wallet1, QuoteError.INVALID_NUMITEMS));
     pool.buy{value: wallet1.balance}(pixel8_addr, 0);
   }
 
-  function test_Buy_Initial_BuyCrazy_SpotPriceOverflow() public {
+  function test_Pool_Buy_Initial_BuyCrazy_SpotPriceOverflow() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.BadQuote.selector, wallet1, QuoteError.SPOT_PRICE_OVERFLOW));
     pool.buy{value: wallet1.balance}(pixel8_addr, 100);
@@ -174,7 +174,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
   // buy - specific
 
-  function test_BuySpecific_NotYetMinted() public {
+  function test_Pool_BuySpecific_NotYetMinted() public {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
 
     wallet1.transfer(q.inputValue); // exact funds
@@ -183,7 +183,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     pool.buySpecific{value: wallet1.balance}(pixel8_addr, 10);
   }
 
-  function test_BuySpecific_NotInPool() public {
+  function test_Pool_BuySpecific_NotInPool() public {
     _buySomeNfts(1, 2 gwei);
 
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
@@ -194,7 +194,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     pool.buySpecific{value: wallet1.balance}(pixel8_addr, 10);
   }
 
-  function test_BuySpecific_Succeeds() public {
+  function test_Pool_BuySpecific_Succeeds() public {
     _buySomeNfts(1, 2 gwei);
     _sellSomeNfts(_getTokenIdArray(1, 10), 1 gwei);
 
@@ -227,7 +227,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
   // getSellQuote
 
-  function test_GetSellQuote_SellOne() public {
+  function test_Pool_GetSellQuote_SellOne() public {
     _buySomeNfts(1, 2 gwei);
 
     SellQuote memory q = pool.getSellQuote(pixel8_addr, 1);
@@ -241,7 +241,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.outputValue, outputValue - fee, "output value");
   }
 
-  function test_GetSellQuote_SellAll() public {
+  function test_Pool_GetSellQuote_SellAll() public {
     _buySomeNfts(11, 2048 gwei);
 
     SellQuote memory q = pool.getSellQuote(pixel8_addr, 11);
@@ -267,7 +267,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.outputValue, outputValue - fee, "output value");
   }
 
-  function test_GetSellQuote_SellNone() public view {
+  function test_Pool_GetSellQuote_SellNone() public view {
     SellQuote memory q = pool.getSellQuote(pixel8_addr, 0);
     assertEq(uint(q.error), uint(QuoteError.INVALID_NUMITEMS));
   }

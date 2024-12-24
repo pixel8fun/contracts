@@ -13,7 +13,7 @@ contract MintSwapPoolNftReceiver is MintSwapPoolTestBase {
     super.setUp();
   }
 
-  function test_MintedNfts_AreAccepted_Fuzz(uint id) public {
+  function test_Pool_MintedNfts_AreAccepted_Fuzz(uint id) public {
     vm.assume(id >= 1);
     vm.assume(id <= 65535);
 
@@ -23,7 +23,7 @@ contract MintSwapPoolNftReceiver is MintSwapPoolTestBase {
     assertEq(pixel8.ownerOf(id), pool_addr);
   }
 
-  function test_TransferredNfts_AreAccepted_Fuzz(uint id) public {
+  function test_Pool_TransferredNfts_AreAccepted_Fuzz(uint id) public {
     vm.assume(id >= 1);
     vm.assume(id <= 65535);
 

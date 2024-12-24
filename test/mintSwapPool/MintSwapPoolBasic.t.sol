@@ -19,7 +19,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     assertEq(s.priceWei, 1 gwei);
   }
 
-  function test_MintPrice_Fuzz(uint128 price) public {
+  function test_Pool_MintPrice_Fuzz(uint128 price) public {
     vm.assume(price >= 1 gwei);
 
     pool = new MintSwapPool(owner1);
@@ -35,7 +35,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     }));
   }
 
-  function test_MintPrice_Bad() public {
+  function test_Pool_MintPrice_Bad() public {
     uint128 price = 1 gwei - 1;
 
     pool = new MintSwapPool(owner1);
@@ -52,7 +52,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     }));
   }
 
-  function test_MintRange_Fuzz(uint start, uint end) public {
+  function test_Pool_MintRange_Fuzz(uint start, uint end) public {
     vm.assume(start > 1);
     vm.assume(end >= start);
 
@@ -69,7 +69,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     }));
   }
 
-  function test_MintRange_Bad() public {
+  function test_Pool_MintRange_Bad() public {
     pool = new MintSwapPool(owner1);
     vm.startPrank(owner1);
 
@@ -98,7 +98,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.stopPrank();
   }
 
-  function test_PoolAlreadyExists() public {
+  function test_Pool_AlreadyExists() public {
     vm.prank(owner1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.PoolAlreadyExists.selector, pixel8_addr));
     pool.create(_getDefaultPoolConfig());

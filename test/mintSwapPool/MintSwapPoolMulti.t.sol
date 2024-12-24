@@ -43,7 +43,7 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     pixel8_2.setPool(pool_addr);
   }
 
-  function test_MultiPoolBuySell() public {
+  function test_Pool_MultiPool_BuySell() public {
     // Buy from first pool
     BuyQuote memory q1 = pool.getBuyQuote(pixel8_addr, 1);
     wallet1.transfer(q1.inputValue);
@@ -93,7 +93,7 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     assertEq(pixel8_2.balanceOf(wallet1), 0, "wallet1 pool2 nfts");
   }
 
-  function test_MultiPoolInsufficientFunds() public {
+  function test_Pool_MultiPool_InsufficientFunds() public {
     // Buy from first pool
     BuyQuote memory q1 = pool.getBuyQuote(pixel8_addr, 1);
     wallet1.transfer(q1.inputValue);
@@ -106,7 +106,7 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     pool.sell(pixel8_2_addr, _getTokenIdArray(1, 10));
   }
 
-  function test_MultiPoolBalanceCheck() public {
+  function test_Pool_MultiPool_BalanceCheck() public {
     // Buy multiple from first pool
     BuyQuote memory q1 = pool.getBuyQuote(pixel8_addr, 3);
     wallet1.transfer(q1.inputValue);

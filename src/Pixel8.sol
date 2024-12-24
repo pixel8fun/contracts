@@ -400,6 +400,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     _transfer(address(this), from, toOwner, fromTokenId);
     _transfer(address(this), toOwner, from, toTokenId);
 
+    // Reset cooldown times for both tokens
+    lastCooldownStartTime[fromTokenId] = block.timestamp;
+    lastCooldownStartTime[toTokenId] = block.timestamp;
+
     // Update force swap stats
     numForceSwaps[from]++;
     if (numForceSwaps[from] > numForceSwaps[highestNumForceSwaps]) {
