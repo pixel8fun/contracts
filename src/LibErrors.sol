@@ -78,4 +78,14 @@ library LibErrors {
    * @dev The wallet has already claimed its prize.
    */
   error PrizeAlreadyClaimed(address wallet);
+
+  /**
+   * @dev The pool does not exist.
+   */
+  error PoolDoesNotExist(address nft);
+
+  /**
+   * @dev The pool already exists.
+   */
+  error PoolAlreadyExists(address nft);
 }

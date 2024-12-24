@@ -15,18 +15,19 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
   function setUp() virtual public override {
     super.setUp();
 
-    pool = new MintSwapPool(_getDefaultPoolConfig());
+    pool = new MintSwapPool(owner1);
     pool_addr = payable(address(pool));
     
-    vm.prank(owner1);
+    vm.startPrank(owner1);
+    pool.create(_getDefaultPoolConfig());
     pixel8.setPool(pool_addr);
+    vm.stopPrank();
   }
 
   // Helper methods
 
-  function _getDefaultPoolConfig() internal view returns (MintSwapPool.Config memory) {
-    return MintSwapPool.Config({
-      owner: owner1,
+  function _getDefaultPoolConfig() internal view returns (MintSwapPool.PoolConfig memory) {
+    return MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 10,

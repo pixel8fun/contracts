@@ -26,45 +26,79 @@ import { IERC721TokenReceiver } from "./ERC721.sol";
  * Mint price follows an exponential bonding curve, meaning price increases by a fixed percentage with each purchase.
  */
 contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
-  IPixel8 public nft;
-  PoolCurve public curve;
-  PoolStatus public status;
-
-  // Constructor
+  /**
+   * @dev Pool status.
+   */
+  struct Pool {
+    IPixel8 nft;
+    PoolCurve curve;
+    PoolStatus status;
+    uint funds;
+  }
 
   /**
-   * @dev Configuration parameters.
+   * @dev Configuration parameters for a pool.
    */
-  struct Config {
-    /** Owner of pool */
-    address owner;
-    /** Pixel8 contractx. */
+  struct PoolConfig {
+    /** Pixel8 contract */
     address nft;
     /** Price curves (and thus liquidity pools) */
     PoolCurve curve;
   }
 
-  constructor(Config memory _config) Ownable(_config.owner) {
-    if (!validateSpotPrice(_config.curve.startPriceWei)) {
-      revert LibErrors.InvalidMintPrice(_config.curve.startPriceWei);
+  // Mapping from NFT contract address to pool ID
+  mapping(address => uint) public poolIds;
+
+  // Array of all pools
+  Pool[] public pools;
+
+  constructor(address owner) Ownable(owner) {}
+
+  /**
+   * @dev Get the pool for a given NFT contract.
+   * @param nftAddress Address of the NFT contract.
+   */
+  function _getPool(address nftAddress) internal view returns (Pool storage) {
+    uint poolId = poolIds[nftAddress];
+    if (poolId == 0) {
+        revert LibErrors.PoolDoesNotExist(nftAddress);
+    }
+    return pools[poolId - 1];
+  }
+
+  /**
+   * @dev Create a new pool for an NFT contract.
+   * @param config Pool configuration.
+   */
+  function create(PoolConfig memory config) external onlyOwner {
+    if (!validateSpotPrice(config.curve.startPriceWei)) {
+      revert LibErrors.InvalidMintPrice(config.curve.startPriceWei);
     }
 
-    if (_config.curve.mintStartId < 1) {
-      revert LibErrors.InvalidMintStartId(_config.curve.mintStartId);
+    if (config.curve.mintStartId < 1) {
+      revert LibErrors.InvalidMintStartId(config.curve.mintStartId);
     }
 
-    if (_config.curve.mintEndId < _config.curve.mintStartId) {
-      revert LibErrors.InvalidMintEndId(_config.curve.mintEndId);
+    if (config.curve.mintEndId < config.curve.mintStartId) {
+      revert LibErrors.InvalidMintEndId(config.curve.mintEndId);
     }
 
-    nft = IPixel8(_config.nft);
-    
-    curve = _config.curve;
-    
-    status = PoolStatus({
-      lastMintId: _config.curve.mintStartId - 1,
-      priceWei: curve.startPriceWei
+    if (poolIds[config.nft] != 0) {
+      revert LibErrors.PoolAlreadyExists(config.nft);
+    }
+
+    Pool memory pool = Pool({
+      nft: IPixel8(config.nft),
+      curve: config.curve,
+      status: PoolStatus({
+        lastMintId: config.curve.mintStartId - 1,
+        priceWei: config.curve.startPriceWei
+      }),
+      funds: 0
     });
+
+    pools.push(pool);
+    poolIds[config.nft] = pools.length;
   }
 
   // ---------------------------------------------------------------
@@ -73,9 +107,11 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
 
   /**
    * @dev Get the curve config and status.
+   * @param nftAddress Address of the NFT contract.
    */
-  function getCurveStatus() public view returns (PoolCurve memory, PoolStatus memory) {
-    return (curve, status);
+  function getCurveStatus(address nftAddress) external view returns (PoolCurve memory, PoolStatus memory) {
+    Pool storage pool = _getPool(nftAddress);
+    return (pool.curve, pool.status);
   }
 
 
@@ -85,72 +121,118 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
 
   /**
     * @dev Buy a specific NFT from the pool.
+    * @param nftAddress Address of the NFT contract.
     * @param _id Id of the NFT to buy.
     */
-  function buySpecific(uint _id) external payable returns (BuyQuote memory quote) {
-    address sender = payable(msg.sender);
+  function buySpecific(address nftAddress, uint _id) external payable returns (BuyQuote memory quote) {
+    Pool storage pool = _getPool(nftAddress);
+    
+    address sender = msg.sender;
 
-    quote = _preBuy(1);
+    quote = _preBuy(pool, 1);
 
-    nft.safeTransferFrom(address(this), sender, _id, "");
+    pool.nft.safeTransferFrom(address(this), sender, _id, "");
 
-    _postBuy(sender, quote);
+    _postBuy(pool, sender, quote);
   }
 
   /**
    * @dev Buy NFTs from the pool.
+   * @param nftAddress Address of the NFT contract.
    * @param numItems Number of NFTs to buy.
    */
-  function buy(uint numItems) external payable returns (BuyQuote memory quote) {
-    address sender = payable(msg.sender);
+  function buy(address nftAddress, uint numItems) external payable returns (BuyQuote memory quote) {
+    Pool storage pool = _getPool(nftAddress);
 
-    quote = _preBuy(numItems);
+    address sender = msg.sender;
 
-    // transfer from balance first
-    uint balance = nft.balanceOf(address(this));
+    quote = _preBuy(pool, numItems);
+
+    uint balance = pool.nft.balanceOf(address(this));
     if (balance > 0) {
       uint toTransfer = balance < numItems ? balance : numItems;
-      nft.batchTransferRange(address(this), sender, toTransfer);
+      pool.nft.batchTransferRange(address(this), sender, toTransfer);
       numItems -= toTransfer;
     }
 
-    // mint remaining
     if (numItems > 0) {
-      nft.batchMint(sender, status.lastMintId + 1, numItems);
-      status.lastMintId += numItems;
+      pool.nft.batchMint(sender, pool.status.lastMintId + 1, numItems);
+      pool.status.lastMintId += numItems;
     }
 
-    _postBuy(sender, quote);
+    _postBuy(pool, sender, quote);
+  }
+
+
+  /**
+   * @dev Get total available NFTs for sale.
+   * @param nftAddress Address of the NFT contract.
+   */
+  function getTotalNftsForSale(address nftAddress) external view returns (uint) {
+    Pool storage pool = _getPool(nftAddress);
+    return pool.nft.balanceOf(address(this)) + (pool.curve.mintEndId - pool.status.lastMintId);
+  }
+
+
+  /**
+   * @dev Get the buy quote for a given number of items.
+   * @param nftAddress Address of the NFT contract.
+   * @param numItems Number of NFTs to buy.
+   */
+  function getBuyQuote(address nftAddress, uint numItems) external view returns (BuyQuote memory) {
+    Pool storage pool = _getPool(nftAddress);
+    return _getBuyQuote(pool, numItems);
+  }
+
+
+  /**
+   * @dev Get the buy quote for a given number of items.
+   * @param numItems Number of NFTs to buy.
+   */
+  function _getBuyQuote(Pool storage pool, uint numItems) internal view returns (BuyQuote memory quote) {
+    (address feeReceiver, uint feeBips) = pool.nft.getRoyaltyInfo();
+    
+    quote = getBuyInfo(pool.status.priceWei, pool.curve.delta, numItems, feeBips);
+    quote.feeReceiver = feeReceiver;
+
+    if (quote.error == QuoteError.NONE) {
+      uint nftsAvailable = pool.nft.balanceOf(address(this)) + (pool.curve.mintEndId - pool.status.lastMintId);
+      if (numItems > nftsAvailable) {
+        quote.error = QuoteError.INSUFFICIENT_NFTS;
+      }
+    }
   }
 
   /**
    * @dev Pre-buy processing.
+   * @param pool Pool.
    * @param numItems Number of NFTs to buy.
    */
-  function _preBuy(uint numItems) private returns (BuyQuote memory quote) {
-    address sender = payable(msg.sender);
+  function _preBuy(Pool storage pool, uint numItems) internal returns (BuyQuote memory quote) {
+    address sender = msg.sender;
 
-    quote = getBuyQuote(numItems);
+    quote = _getBuyQuote(pool, numItems);
 
     if (quote.error != QuoteError.NONE) {
       revert LibErrors.BadQuote(sender, quote.error);
     }
 
-    // check sender funds
     if (quote.inputValue > msg.value) {
       revert LibErrors.InsufficientSenderFunds(sender, quote.inputValue, msg.value);
     }
-
-    // update status
-    status.priceWei = quote.newSpotPrice;
   }
+
 
   /**
    * @dev Post-buy processing.
    * @param sender Buyer.
    * @param quote Buy quote.
    */
-  function _postBuy(address sender, BuyQuote memory quote) private {
+  function _postBuy(Pool storage pool, address sender, BuyQuote memory quote) internal {
+    // add funds to pool
+    pool.funds += (quote.inputValue - quote.fee);
+    pool.status.priceWei = quote.newSpotPrice;
+
     // pay fee
     payable(quote.feeReceiver).transfer(quote.fee);
 
@@ -160,90 +242,78 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     }
   }
 
-  /**
-   * @dev Get total available NFTs for sale.
-   */
-  function getTotalNftsForSale() public view returns (uint) {
-    return nft.balanceOf(address(this)) + (curve.mintEndId - status.lastMintId);
-  }
-
-  /**
-   * @dev Get total funds in the pool.
-   */
-  function getFunds() public view returns (uint) {
-    return address(this).balance;
-  }
-
-  /**
-   * @dev Get the buy quote for a given number of items.
-   * @param numItems Number of NFTs to buy.
-   */
-  function getBuyQuote(uint numItems) public view returns (BuyQuote memory quote) {
-    (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();
-    
-    quote = getBuyInfo(status.priceWei, curve.delta, numItems, feeBips);
-    quote.feeReceiver = feeReceiver;
-
-    if (quote.error == QuoteError.NONE) {
-      // check NFTs available
-      uint nftsAvailable = getTotalNftsForSale(); 
-      if (numItems > nftsAvailable) {
-        quote.error = QuoteError.INSUFFICIENT_NFTS;
-      }
-    }
-  }
-
   // ---------------------------------------------------------------
   // Selling
   // ---------------------------------------------------------------
 
 
-  function sell(uint[] calldata tokenIds) external returns (SellQuote memory quote) {
-    address sender = payable(msg.sender);
+  function sell(address nftAddress, uint[] calldata tokenIds) external returns (SellQuote memory quote) {
+    Pool storage pool = _getPool(nftAddress);
 
-    quote = getSellQuote(tokenIds.length);
+    address sender = msg.sender;
+
+    quote = _getSellQuote(pool, tokenIds.length);
 
     if (quote.error != QuoteError.NONE) {
       revert LibErrors.BadQuote(sender, quote.error);
     }
 
-    // check balance
-    uint tokenBal = nft.balanceOf(sender);
+    uint tokenBal = pool.nft.balanceOf(sender);
     if (tokenIds.length > tokenBal) {
       revert LibErrors.InsufficientSenderNfts(sender, tokenIds.length, tokenBal);
     }
     
-    // update status
-    status.priceWei = quote.newSpotPrice;
+    pool.status.priceWei = quote.newSpotPrice;
+    pool.funds -= (quote.outputValue + quote.fee);
 
-    // transfer NFTs to pool
-    nft.batchTransferIds(sender, address(this), tokenIds);
-
-    // pay caller
+    pool.nft.batchTransferIds(sender, address(this), tokenIds);
     payable(sender).transfer(quote.outputValue);
-
-    // pay fee
     payable(quote.feeReceiver).transfer(quote.fee);
   }
 
   /**
    * @dev Get the sell quote for a given number of items.
+   * @param nftAddress Address of the NFT contract.
    * @param numItems Number of NFTs to sell.
    */
-  function getSellQuote(uint numItems) public view returns (SellQuote memory quote) {
-    (address feeReceiver, uint feeBips) = nft.getRoyaltyInfo();
+  function getSellQuote(address nftAddress, uint numItems) external view returns (SellQuote memory) {
+    Pool storage pool = _getPool(nftAddress);
+    return _getSellQuote(pool, numItems);
+  }
 
-    quote = getSellInfo(status.priceWei, curve.delta, numItems, feeBips);
+
+  /**
+   * @dev Get the sell quote for a given number of items.
+   * @param numItems Number of NFTs to sell.
+   */
+  function _getSellQuote(Pool storage pool, uint numItems) internal view returns (SellQuote memory quote) {
+    (address feeReceiver, uint feeBips) = pool.nft.getRoyaltyInfo();
+
+    quote = getSellInfo(pool.status.priceWei, pool.curve.delta, numItems, feeBips);
     quote.feeReceiver = feeReceiver;
 
     if (quote.error == QuoteError.NONE) {
-      // check that pool has enough balance to pay
       uint totalToPay = quote.outputValue + quote.fee;
-      if (totalToPay > address(this).balance) {
+
+      if (totalToPay > pool.funds || totalToPay > address(this).balance) {
         quote.error = QuoteError.INSUFFICIENT_FUNDS;
       }
     }
   }
+
+
+  // ---------------------------------------------------------------
+  // Funds
+  // ---------------------------------------------------------------
+
+  /**
+   * @dev Get total funds in the pool.
+   * @param nftAddress Address of the NFT contract.
+   */
+  function getFunds(address nftAddress) external view returns (uint) {
+    Pool storage pool = _getPool(nftAddress);
+    return pool.funds;
+  }  
 
   // ---------------------------------------------------------------
   // IERC721TokenReceiver
@@ -254,7 +324,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     address /*from*/,
     uint256 /*tokenId*/,
     bytes calldata /*data*/
-  ) public pure override returns (bytes4) {
+  ) external pure override returns (bytes4) {
     return IERC721TokenReceiver.onERC721Received.selector;
   }
 }

@@ -9,10 +9,7 @@ import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_DefaultConfig() public {
-    assertEq(address(pool.nft()), pixel8_addr);
-    assertEq(pool.owner(), owner1, "owner");
-    
-    (PoolCurve memory c, PoolStatus memory s) = pool.getCurveStatus();
+    (PoolCurve memory c, PoolStatus memory s) = pool.getCurveStatus(pixel8_addr);
     assertEq(c.mintStartId, 10);
     assertEq(c.mintEndId, 20);
     assertEq(c.startPriceWei, 1 gwei);
@@ -25,8 +22,9 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_MintPrice_Fuzz(uint128 price) public {
     vm.assume(price >= 1 gwei);
 
-    pool = new MintSwapPool(MintSwapPool.Config({
-      owner: owner1,
+    pool = new MintSwapPool(owner1);
+    vm.prank(owner1);
+    pool.create(MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
@@ -40,9 +38,10 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_MintPrice_Bad() public {
     uint128 price = 1 gwei - 1;
 
+    pool = new MintSwapPool(owner1);
+    vm.prank(owner1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintPrice.selector, price));
-    pool = new MintSwapPool(MintSwapPool.Config({
-      owner: owner1,
+    pool.create(MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
@@ -57,8 +56,9 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.assume(start > 1);
     vm.assume(end >= start);
 
-    pool = new MintSwapPool(MintSwapPool.Config({
-      owner: owner1,
+    pool = new MintSwapPool(owner1);
+    vm.prank(owner1);
+    pool.create(MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: start,
@@ -70,9 +70,11 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
   }
 
   function test_MintRange_Bad() public {
+    pool = new MintSwapPool(owner1);
+    vm.startPrank(owner1);
+
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintStartId.selector, 0));
-    pool = new MintSwapPool(MintSwapPool.Config({
-      owner: owner1,
+    pool.create(MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 0,
@@ -83,8 +85,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     }));
 
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintEndId.selector, 1));
-    pool = new MintSwapPool(MintSwapPool.Config({
-      owner: owner1,
+    pool.create(MintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 2,
@@ -93,5 +94,13 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
         delta: 2 * 1e18
       })
     }));
+
+    vm.stopPrank();
+  }
+
+  function test_PoolAlreadyExists() public {
+    vm.prank(owner1);
+    vm.expectRevert(abi.encodeWithSelector(LibErrors.PoolAlreadyExists.selector, pixel8_addr));
+    pool.create(_getDefaultPoolConfig());
   }
 }

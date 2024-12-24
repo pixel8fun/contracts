@@ -23,6 +23,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   event GameOver();
 
+  /**
+   * @dev Emitted when the pool is set.
+   */
+  event PoolSet(address pool);
 
   /**
    * @dev Prize pool info.
@@ -192,6 +196,16 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
       || type(IERC4906).interfaceId == interfaceId;
   }
 
+  // Pool
+
+  /**
+   * @dev Set the pool address.
+   */
+  function setPool(address newPool) external onlyOwner {
+    pool = newPool;
+    emit PoolSet(newPool);
+  }
+
   // token URI
 
   /**
@@ -284,16 +298,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     
     // IERC4906
     emit BatchMetadataUpdate(1, totalSupply);
-  }
-
-  // Functions - set pool
-
-  /**
-   * @dev Set the pool.
-   * @param _pool The address of the new pool.
-   */
-  function setPool(address _pool) external onlyOwner {
-    pool = _pool;
   }
 
   // Minting
