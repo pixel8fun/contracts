@@ -383,6 +383,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @param toTokenId The token ID to swap with
    */
   function forceSwap(address from, uint256 fromTokenId, uint256 toTokenId) external payable {
+    // Check that game is not over
+    if (gameOver) {
+      revert LibErrors.GameOver();
+    }
+
     // Check that msg.value is sufficient
     if (msg.value < forceSwapCost) {
       revert LibErrors.InsufficientSenderFunds(msg.sender, forceSwapCost, msg.value);

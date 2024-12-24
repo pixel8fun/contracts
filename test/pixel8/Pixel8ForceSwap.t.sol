@@ -196,4 +196,65 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(fromTokenId, ALICE_TOKEN, "Wrong fromTokenId");
         assertEq(toTokenId, BOB_TOKEN, "Wrong toTokenId");
     }
+
+    function test_ForceSwap_FeeAddedToPrizePool() public {
+        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        
+        vm.prank(alice);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
+
+        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.01 ether));
+    }
+
+    function test_ForceSwap_MultipleFeesCumulative() public {
+        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        
+        // First swap
+        vm.prank(alice);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
+
+        // Wait for cooldown
+        vm.warp(block.timestamp + 1 hours);
+
+        // Second swap
+        vm.prank(bob);
+        pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, EVE_TOKEN);
+
+        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.02 ether));
+    }
+
+    function test_ForceSwap_ExcessFeeAddedToPrizePool() public {
+        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        
+        vm.prank(alice);
+        pixel8.forceSwap{value: 0.015 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
+
+        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.015 ether));
+    }
+
+    function test_ForceSwap_RevertWhenGameOver() public {
+        // Reveal enough tiles to end the game
+        vm.startPrank(pool1);
+        for (uint i = 1; i <= 10; i++) {
+            pixel8.batchMint(alice, i + 10, 1);
+        }
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        for (uint i = 1; i <= 10; i++) {
+            _pixel8_reveal(alice, i + 10, "uri");
+        }
+        vm.stopPrank();
+
+        assertTrue(pixel8.gameOver(), "Game should be over");
+
+        vm.prank(alice);
+        vm.expectRevert(LibErrors.GameOver.selector);
+        pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
+    }
+
+    function _calculateForceSwapFeeMinusDevRoyalties(uint256 _amount) internal view returns (uint256) {
+        uint totalBips = pixel8.getDevRoyalties().feeBips + pixel8.getPrizePool().feeBips;
+        return _amount - _amount * pixel8.getDevRoyalties().feeBips / totalBips;
+    }
 } 

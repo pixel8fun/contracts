@@ -113,4 +113,9 @@ library LibErrors {
    * @dev The token cannot be force swapped because it is on cooldown.
    */
   error TokenOnCooldown(uint256 tokenId);
+
+  /**
+   * @dev The game is over.
+   */
+  error GameOver();
 }
