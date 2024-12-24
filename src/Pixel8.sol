@@ -160,6 +160,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   address public highestTradingVolume;
 
+  /**
+   * @dev The cooldown period duration in seconds.
+   */
+  uint public forceSwapCooldownPeriod;
+
   // Constructor
 
   /**
@@ -182,6 +187,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint gameOverRevealThreshold;
     /** Cost in wei to perform a force swap */
     uint forceSwapCost;
+    /** Duration in seconds for the cooldown period between force swaps */
+    uint forceSwapCooldownPeriod;
   }
   
   /**
@@ -197,6 +204,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     devRoyalties.receiver = _config.devRoyaltyReceiver;
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
     forceSwapCost = _config.forceSwapCost;
+    forceSwapCooldownPeriod = _config.forceSwapCooldownPeriod;
 
     _setDefaultRoyalty(address(this), devRoyalties.feeBips + prizePool.feeBips);
   }
@@ -417,8 +425,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // Check cooldown period
-    if (block.timestamp - lastCooldownStartTime[toTokenId] < 1 hours) {
+    if (block.timestamp - lastCooldownStartTime[toTokenId] < forceSwapCooldownPeriod) {
       revert LibErrors.TokenOnCooldown(toTokenId);
+    }
+
+    if (block.timestamp - lastCooldownStartTime[fromTokenId] < forceSwapCooldownPeriod) {
+      revert LibErrors.TokenOnCooldown(fromTokenId);
     }
 
     // Perform the swap

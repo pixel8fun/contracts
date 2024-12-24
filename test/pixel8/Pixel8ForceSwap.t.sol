@@ -31,7 +31,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.stopPrank();
 
         // Wait for token cooldown
-        vm.warp(block.timestamp + 1 hours);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod());
 
         // add enough funds to each wallet
         vm.deal(alice, 0.02 ether);
@@ -81,10 +81,10 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
     function test_ForceSwap_RevertWhenTokenOnCooldown() public {
         // Reset to time of minting
-        vm.warp(block.timestamp - 1 hours);
+        vm.warp(block.timestamp - pixel8.forceSwapCooldownPeriod());
         
         // Fast forward 30 mins after pool buy
-        vm.warp(block.timestamp + 30 minutes);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod() / 2);
         
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOnCooldown.selector, BOB_TOKEN));
@@ -115,14 +115,14 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.highestNumForceSwaps(), alice);
 
         // Fast forward 1 hour to bypass cooldown
-        vm.warp(block.timestamp + 1 hours);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod());
 
         // Bob does two swaps
         vm.prank(bob);
         pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, BOB_TOKEN);
 
         // Fast forward 1 hour to bypass cooldown
-        vm.warp(block.timestamp + 1 hours);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod());
 
         vm.prank(bob);
         pixel8.forceSwap{value: 0.01 ether}(bob, BOB_TOKEN, ALICE_TOKEN);
@@ -141,7 +141,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.lastCooldownStartTime(BOB_TOKEN), block.timestamp);
 
         // Fast forward 30 minutes
-        vm.warp(block.timestamp + 30 minutes);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod() / 2);
 
         // Bob tries to force swap but fails due to cooldown
         vm.prank(bob);
@@ -149,7 +149,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, BOB_TOKEN);
 
         // Fast forward another 30 minutes (total 1 hour)
-        vm.warp(block.timestamp + 30 minutes);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod() / 2);
 
         // Now Bob can force swap
         vm.prank(bob);
@@ -160,7 +160,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.lastCooldownStartTime(BOB_TOKEN), block.timestamp);
     }
 
-    function test_ForceSwap_CanSwapOwnTokenDuringCooldown() public {
+    function test_ForceSwap_CannotSwapOwnTokenDuringCooldown() public {
         // Initial force swap to put BOB_TOKEN in cooldown
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
@@ -170,17 +170,13 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.lastCooldownStartTime(BOB_TOKEN), block.timestamp);
 
         // Fast forward 30 minutes (ALICE_TOKEN still in cooldown)
-        vm.warp(block.timestamp + 30 minutes);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod() / 2);
 
-        // Bob should be able to force swap ALICE_TOKEN with Eve's token
+        // Bob should NOT be able to force swap ALICE_TOKEN with Eve's token
         // even though ALICE_TOKEN is in cooldown
         vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(LibErrors.TokenOnCooldown.selector, ALICE_TOKEN));
         pixel8.forceSwap{value: 0.01 ether}(bob, ALICE_TOKEN, EVE_TOKEN);
-
-        // Verify ownership
-        assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
-        assertEq(pixel8.ownerOf(ALICE_TOKEN), eve);
-        assertEq(pixel8.ownerOf(EVE_TOKEN), bob);
     }
 
     function test_ForceSwap_EmitsEvent() public {
@@ -214,7 +210,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         pixel8.forceSwap{value: 0.01 ether}(alice, ALICE_TOKEN, BOB_TOKEN);
 
         // Wait for cooldown
-        vm.warp(block.timestamp + 1 hours);
+        vm.warp(block.timestamp + pixel8.forceSwapCooldownPeriod());
 
         // Second swap
         vm.prank(bob);

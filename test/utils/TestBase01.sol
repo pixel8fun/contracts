@@ -44,7 +44,8 @@ abstract contract TestBase01 is Test {
       devRoyaltyReceiver: owner1,
       prizePoolFeeBips: 1000, /* 1000 bips = 10% */
       gameOverRevealThreshold: 10,
-      forceSwapCost: 0.01 ether
+      forceSwapCost: 0.01 ether,
+      forceSwapCooldownPeriod: 1 hours
     });
   }
 
