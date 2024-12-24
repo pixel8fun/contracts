@@ -80,6 +80,11 @@ library LibErrors {
   error PrizeAlreadyClaimed(address wallet);
 
   /**
+   * @dev The address is invalid.
+   */
+  error InvalidAddress(address addr);
+
+  /**
    * @dev The pool does not exist.
    */
   error PoolDoesNotExist(address nft);
@@ -88,4 +93,9 @@ library LibErrors {
    * @dev The pool already exists.
    */
   error PoolAlreadyExists(address nft);
+
+  /**
+   * @dev The pool has already been set.
+   */
+  error PoolAlreadySet();
 }

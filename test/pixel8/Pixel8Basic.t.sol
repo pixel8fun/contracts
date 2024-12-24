@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { Pixel8 } from "src/Pixel8.sol";
+import { LibErrors } from "src/LibErrors.sol";
 import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 
 contract Pixel8Basic is Pixel8TestBase {
@@ -35,5 +36,20 @@ contract Pixel8Basic is Pixel8TestBase {
     (address rec, uint fee) = pixel8.getRoyaltyInfo();
     assertEq(rec, pixel8_addr, "getRoyaltyInfo.receiver");
     assertEq(fee, 2000, "getRoyaltyInfo.fee");
+  }
+
+  function test_SetPoolOnlyOnce() public {
+    vm.startPrank(owner1);
+    pixel8.setPool(address(1));
+    vm.expectRevert(LibErrors.PoolAlreadySet.selector);
+    pixel8.setPool(address(2));
+    vm.stopPrank();
+  }
+
+  function test_SetPoolNotZeroAddress() public {
+    vm.startPrank(owner1);
+    vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidAddress.selector, address(0)));
+    pixel8.setPool(address(0));
+    vm.stopPrank();
   }
 }

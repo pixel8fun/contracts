@@ -202,6 +202,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @dev Set the pool address.
    */
   function setPool(address newPool) external onlyOwner {
+    if (pool != address(0)) {
+      revert LibErrors.PoolAlreadySet();
+    }
+    if (newPool == address(0)) {
+      revert LibErrors.InvalidAddress(newPool);
+    }
     pool = newPool;
     emit PoolSet(newPool);
   }

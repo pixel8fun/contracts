@@ -370,14 +370,6 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     pool.sell(pixel8_addr, tokenIds);
     assertEq(wallet1.balance, q.outputValue, "post sale: wallet1 balance");
   }
-
-  function _getTokenIdArray(uint numItems, uint firstId) private pure returns (uint[] memory) {
-    uint[] memory tokenIds = new uint[](numItems);
-    for (uint i = 0; i < numItems; i++) {
-      tokenIds[i] = firstId + i;
-    }
-    return tokenIds;
-  }
 }
 
 

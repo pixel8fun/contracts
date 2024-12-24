@@ -38,5 +38,16 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
     });
   }
 
+
+  // Helper methods
+
+  function _getTokenIdArray(uint numItems, uint firstId) internal pure returns (uint[] memory) {
+    uint[] memory tokenIds = new uint[](numItems);
+    for (uint i = 0; i < numItems; i++) {
+      tokenIds[i] = firstId + i;
+    }
+    return tokenIds;
+  }
+
   function testPoolTestBase_ExcludeFromCoverage() public {}  
 }
