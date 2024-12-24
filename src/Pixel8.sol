@@ -29,6 +29,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   event GameOver();
 
   /**
+   * @dev Emitted when a force swap occurs.
+   */
+  event ForceSwap(uint256 fromTokenId, uint256 toTokenId);
+
+  /**
    * @dev Emitted when the pool is set.
    */
   event PoolSet(address pool);
@@ -411,6 +416,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     if (numForceSwaps[from] > numForceSwaps[highestNumForceSwaps]) {
       highestNumForceSwaps = from;
     }
+
+    emit ForceSwap(fromTokenId, toTokenId);
   }
 
   // prize pool

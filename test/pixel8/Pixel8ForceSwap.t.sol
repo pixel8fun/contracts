@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
+import { console2 as c } from "forge-std/console2.sol";
+import { Vm } from "forge-std/Vm.sol";
 import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { LibErrors } from "../../src/LibErrors.sol";
 
@@ -168,5 +170,19 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
         assertEq(pixel8.ownerOf(ALICE_TOKEN), eve);
         assertEq(pixel8.ownerOf(EVE_TOKEN), bob);
+    }
+
+    function test_ForceSwap_EmitsEvent() public {
+        vm.recordLogs();
+        
+        vm.prank(alice);
+        pixel8.forceSwap(alice, ALICE_TOKEN, BOB_TOKEN);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 3, "Should emit three events (two transfer + 1 swap)");
+        assertEq(entries[2].topics[0], keccak256("ForceSwap(uint256,uint256)"), "Wrong event signature");
+        (uint256 fromTokenId, uint256 toTokenId) = abi.decode(entries[2].data, (uint256, uint256));
+        assertEq(fromTokenId, ALICE_TOKEN, "Wrong fromTokenId");
+        assertEq(toTokenId, BOB_TOKEN, "Wrong toTokenId");
     }
 } 
