@@ -8,7 +8,7 @@ import { MintSwapPoolTestBase } from "./MintSwapPoolTestBase.sol";
 import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 contract MintSwapPoolBasic is MintSwapPoolTestBase {
-  function test_DefaultConfig() public {
+  function test_Pool_DefaultConfig() public {
     (PoolCurve memory c, PoolStatus memory s) = pool.getCurveStatus(pixel8_addr);
     assertEq(c.mintStartId, 10);
     assertEq(c.mintEndId, 20);

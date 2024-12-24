@@ -49,12 +49,30 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
 
   function test_Pixel8BatchTransferIds_ByPool_Succeeds() public {
     uint[] memory ids = _getIdsToTransfer();
+    uint256 currentTime = block.timestamp;
 
     vm.prank(pool1);
     pixel8.batchTransferIds(wallet1, wallet2, ids);
 
     assertEq(pixel8.ownerOf(1), wallet2);
     assertEq(pixel8.ownerOf(2), wallet2);
+
+    // Check lastPoolBuyTime is updated when transferred from pool
+    assertEq(pixel8.lastPoolBuyTime(1), currentTime);
+    assertEq(pixel8.lastPoolBuyTime(2), currentTime);
+  }
+
+  function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastPoolBuyTime() public {
+    uint[] memory ids = _getIdsToTransfer();
+    uint256 initialTime = pixel8.lastPoolBuyTime(1);
+
+    // Transfer from wallet1 to wallet2 (not from pool)
+    vm.prank(wallet1);
+    pixel8.batchTransferIds(wallet1, wallet2, ids);
+
+    // Check lastPoolBuyTime remains unchanged
+    assertEq(pixel8.lastPoolBuyTime(1), initialTime);
+    assertEq(pixel8.lastPoolBuyTime(2), initialTime);
   }
 
   function test_Pixel8BatchTransferIdsIfNotAuthorised_Fails() public {

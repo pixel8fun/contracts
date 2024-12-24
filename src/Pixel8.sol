@@ -75,9 +75,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   address public pool;
 
   /**
-   * @dev The minter can approve new token mints and token reveals.
+   * @dev The authoriser can approve token reveals.
    */
-  address public minter;
+  address public authoriser;
 
   /**
    * @dev Default token image as a data URI.
@@ -115,6 +115,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   mapping(address => bool) public prizeClaimed;
 
   /**
+   * @dev Tracks when each token was last bought from the pool
+   */
+  mapping(uint256 => uint256) public lastPoolBuyTime;
+
+  /**
    * @dev Game points for each wallet.
    */
   mapping(address => uint) public points;
@@ -149,8 +154,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   struct Config {
     /** Owner. */
     address owner;
-    /** Minter. */
-    address minter;
+    /** Authoriser. */
+    address authoriser;
     /** Dev royalty receiver  */
     address devRoyaltyReceiver;
     /** Dev royalty fee */
@@ -167,7 +172,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @dev Constructor.
    */
   constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") Ownable(_config.owner) {
-    minter = _config.minter;
+    authoriser = _config.authoriser;
     defaultImage = _config.defaultImage;
 
     prizePool.feeBips = _config.prizePoolFeeBips;
@@ -185,7 +190,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @dev See {IERC721-isApprovedForAll}.
    */
   function isApprovedForAll(address owner, address spender) public view override(ERC721, IERC721) returns (bool) {
-    return (spender == pool || ERC721.isApprovedForAll(owner, spender));
+    return (spender == address(this) ||spender == pool || ERC721.isApprovedForAll(owner, spender));
   }
 
   // Interface
@@ -255,7 +260,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @param _params The reveal parameters.
    */
   function reveal(MintRevealParams calldata _params) external {
-    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
+    _assertValidSignature(msg.sender, authoriser, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
 
     _requireOwned(_params.tokenId);
 
@@ -309,30 +314,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   // Minting
 
   /**
-   * @dev Set the minter.
-   * @param _minter The address of the new minter.
+   * @dev Set the authoriser.
+   * @param _authoriser The address of the new authoriser.
    */
-  function setMinter(address _minter) external onlyOwner {
-    minter = _minter;
-  }
-
-  /**
-   * @dev Mint and optionally reveal a token, authorized by the minter.
-   *
-   * @param _params The reveal parameters.
-   */
-  function mint(MintRevealParams calldata _params) external {
-    _assertValidSignature(msg.sender, minter, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
-
-    _safeMint(_params.wallet, _params.tokenId, "");
-
-    if (bytes(_params.uri).length > 0) {
-      _reveal(_params.tokenId, _params.uri);
-    }
-
-    if (_params.points > 0) {
-      _addPlayerPoints(_params.wallet, _params.points);
-    }
+  function setAuthoriser(address _authoriser) external onlyOwner {
+    authoriser = _authoriser;
   }
 
   function _addPlayerPoints(address _wallet, uint _points) private {
@@ -383,6 +369,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   function batchMint(address _to, uint _startId, uint _count) external override onlyPool {
     _safeBatchMint(_to, _startId, _count, "");
+    _updateLastPoolBuyTimeRange(_startId, _count);
   }
 
   /**
@@ -390,13 +377,66 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   function batchTransferIds(address _from, address _to, uint[] calldata _tokenIds) external override {
     _safeBatchTransfer(msg.sender, _from, _to, _tokenIds, "");
+    if (_from == pool) {
+      _updateLastPoolBuyTimeIds(_tokenIds);
+    }
   }
 
   /**
     * @dev See {IPoolNFT-batchTransferRange}.
     */
   function batchTransferRange(address _from, address _to, uint _numTokens) external override {
-    _safeBatchTransfer(msg.sender, _from, _to, _numTokens, "");
+    uint256 firstTransferredId = _safeBatchTransfer(msg.sender, _from, _to, _numTokens, "");
+    if (_from == pool) {
+      _updateLastPoolBuyTimeRange(firstTransferredId, _numTokens);
+    }
+  }
+
+
+  /**
+   * @dev Force swap a token with another token
+   * @param from The address initiating the force swap
+   * @param fromTokenId The token ID owned by from address
+   * @param toTokenId The token ID to swap with
+   */
+  function forceSwap(address from, uint256 fromTokenId, uint256 toTokenId) external {
+    // Check that fromTokenId is owned by from
+    if (ownerOf(fromTokenId) != from) {
+      revert LibErrors.Unauthorized(from);
+    }
+
+    // Check that caller is owner
+    if (from != msg.sender) {
+      revert LibErrors.Unauthorized(msg.sender);
+    }
+
+    // Check that tokens are different
+    if (fromTokenId == toTokenId) {
+      revert LibErrors.InvalidTokenId(toTokenId);
+    }
+
+    // Check that toTokenId exists
+    address toOwner = ownerOf(toTokenId);
+
+    // Check that toTokenId is not owned by pool
+    if (toOwner == pool) {
+      revert LibErrors.TokenOwnedByPool(toTokenId);
+    }
+
+    // Check cooldown period
+    if (block.timestamp - lastPoolBuyTime[toTokenId] < 1 hours) {
+      revert LibErrors.TokenOnCooldown(toTokenId);
+    }
+
+    // Perform the swap
+    _transfer(address(this), from, toOwner, fromTokenId);
+    _transfer(address(this), toOwner, from, toTokenId);
+
+    // Update force swap stats
+    numForceSwaps[from]++;
+    if (numForceSwaps[from] > numForceSwaps[highestNumForceSwaps]) {
+      highestNumForceSwaps = from;
+    }
   }
 
   // prize pool
@@ -497,6 +537,27 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
     prizePoolPot = address(this).balance - devRoyaltiesPot;
   }
+
+  /**
+   * @dev Updates lastPoolBuyTime for a range of token IDs.
+   * @param _startId The starting token ID
+   * @param _count The number of consecutive tokens
+   */
+  function _updateLastPoolBuyTimeRange(uint256 _startId, uint256 _count) private {
+    for (uint i = 0; i < _count; i++) {
+      lastPoolBuyTime[_startId + i] = block.timestamp;
+    }
+  }
+
+  /**
+   * @dev Updates lastPoolBuyTime for specific token IDs.
+   * @param _tokenIds Array of token IDs to update
+   */
+  function _updateLastPoolBuyTimeIds(uint256[] calldata _tokenIds) private {
+    for (uint i = 0; i < _tokenIds.length; i++) {
+      lastPoolBuyTime[_tokenIds[i]] = block.timestamp;
+    }
+  }  
 
   // Modifiers
 

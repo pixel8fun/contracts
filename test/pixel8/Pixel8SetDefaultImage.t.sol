@@ -13,40 +13,37 @@ contract Pixel8SetDefaultImage is Pixel8TestBase {
 
   function test_SetDefaultImageWhenOwner_Succeeds() public {
     vm.prank(owner1);
-    pixel8.setDefaultImage("newImage");
-    assertEq(pixel8.defaultImage(), "newImage");
-  }
+    pixel8.setPool(pool1);
 
-  function test_SetDefaultImageWhenOwner_EmitsEvent() public {
-    vm.prank(wallet1);
-    _pixel8_mint(wallet1, 1, "uri", 1);
+    vm.prank(pool1);
+    pixel8.batchMint(wallet1, 1, 1);
 
     vm.recordLogs();
 
-    vm.prank(pixel8.owner());
-    pixel8.setDefaultImage("ten");
+    vm.prank(owner1);
+    pixel8.setDefaultImage("img2");
+
+    assertEq(pixel8.defaultImage(), "img2");
+    assertEq(pixel8.tokenURI(1), _buildDefaultTokenUri(1));
 
     Vm.Log[] memory entries = vm.getRecordedLogs();
     assertEq(entries.length, 1, "Invalid entry count");
     assertEq(entries[0].topics.length, 1, "Invalid event count");
     assertEq(
-        entries[0].topics[0],
-        keccak256("BatchMetadataUpdate(uint256,uint256)"),
-        "Invalid event signature"
+        keccak256(entries[0].data),
+        keccak256(abi.encode(uint256(1), pixel8.totalSupply())),
+        "Invalid event data"
     );
-    (uint256 from, uint256 to) = abi.decode(entries[0].data, (uint256, uint256));
-    assertEq(from, 1);
-    assertEq(to, 1);
   }
 
   function test_SetDefaultImageWhenNotOwner_Fails() public {
-    vm.prank(minter1);
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter1));
-    pixel8.setDefaultImage("newImage");
+    vm.prank(authoriser1);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, authoriser1));
+    pixel8.setDefaultImage("img2");
 
     address random = address(0x8876);
     vm.prank(random);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, random));
-    pixel8.setDefaultImage("newImage");
+    pixel8.setDefaultImage("img2");
   }
 }

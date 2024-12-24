@@ -184,8 +184,9 @@ abstract contract ERC721 is IERC721, IERC721Metadata, IERC721Enumerable, IERC721
     * @param _to The address to transfer to.
     * @param _count The number of tokens to transfer.
     * @param _data Additional data to send to IERC721TokenReceiver contract.
+    * @return The first token ID in the transfer.
     */
-  function _safeBatchTransfer(address _caller, address _from, address _to, uint _count, bytes memory _data) internal virtual {
+  function _safeBatchTransfer(address _caller, address _from, address _to, uint _count, bytes memory _data) internal virtual returns (uint256) {
     if (_to == address(0)) {
       revert ERC721ZeroAddress();
     }
@@ -200,16 +201,22 @@ abstract contract ERC721 is IERC721, IERC721Metadata, IERC721Enumerable, IERC721
     */
     uint i = _balanceOf[_from];
     uint endIndex = _balanceOf[_from] - _count;
+    uint startTokenId = 0;
 
     while (i > endIndex) {
       // endIndex could be 0, so we check if i is above it before decrementing to prevent underflow
       i--;
 
       uint256 id = tokenOfOwnerByIndex[_from][i];
+      if (startTokenId == 0) {
+        startTokenId = id;
+      }
 
       _transfer(_caller, _from, _to, id);
       _informRecipient(_caller, _from, _to, id, _data);
     }
+
+    return startTokenId;
   }
 
   // mint/burn

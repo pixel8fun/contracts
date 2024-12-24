@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
+import { console2 as c } from "forge-std/Test.sol";
 import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
@@ -9,17 +10,22 @@ import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 
 abstract contract MintSwapPoolTestBase is TestBase01 {  
+  MintSwapPool.PoolConfig public defaultPoolConfig;
   MintSwapPool public pool;
   address payable pool_addr;
 
   function setUp() virtual public override {
     super.setUp();
 
+    if (defaultPoolConfig.nft == address(0)) {
+      defaultPoolConfig = _getDefaultPoolConfig();
+    }
+
     pool = new MintSwapPool(owner1);
     pool_addr = payable(address(pool));
     
     vm.startPrank(owner1);
-    pool.create(_getDefaultPoolConfig());
+    pool.create(defaultPoolConfig);
     pixel8.setPool(pool_addr);
     vm.stopPrank();
   }
@@ -37,9 +43,6 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
       })
     });
   }
-
-
-  // Helper methods
 
   function _getTokenIdArray(uint numItems, uint firstId) internal pure returns (uint[] memory) {
     uint[] memory tokenIds = new uint[](numItems);

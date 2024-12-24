@@ -11,7 +11,7 @@ contract Pixel8Basic is Pixel8TestBase {
     assertEq(pixel8.name(), "Pixel8", "name");
     assertEq(pixel8.symbol(), "PIXEL8", "symbol");
     assertEq(pixel8.owner(), owner1, "owner");
-    assertEq(pixel8.minter(), minter1, "minter");
+    assertEq(pixel8.authoriser(), authoriser1, "authoriser");
     assertEq(pixel8.pool(), address(0), "pool");
     assertEq(pixel8.defaultImage(), "img", "defaultImg");
 

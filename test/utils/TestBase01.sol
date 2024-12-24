@@ -13,8 +13,8 @@ abstract contract TestBase01 is Test {
   uint public owner1_key = 0x123;
   address payable owner1 = payable(vm.addr(owner1_key));
 
-  uint public minter1_key = 0x1234;
-  address payable minter1 = payable(vm.addr(minter1_key));
+  uint public authoriser1_key = 0x1234;
+  address payable authoriser1 = payable(vm.addr(authoriser1_key));
 
   address payable wallet1 = payable(address(0x1234567890));
   address payable wallet2 = payable(address(0x1234567890123));
@@ -38,17 +38,17 @@ abstract contract TestBase01 is Test {
   function _getDefaultPixel8Config() internal view returns (Pixel8.Config memory) {
     return Pixel8.Config({
       owner: owner1,
-      minter: minter1,
+      authoriser: authoriser1,
       devRoyaltyFeeBips: 1000, /* 1000 bips = 10% */
       defaultImage: "img",
       devRoyaltyReceiver: owner1,
       prizePoolFeeBips: 1000, /* 1000 bips = 10% */
       gameOverRevealThreshold: 10
     });
-  }  
+  }
 
-  function _computeMinterSig(bytes memory _data, uint _deadline) internal view returns (Auth.Signature memory) {
-    return _computeSig(minter1_key, _data, _deadline);
+  function _computeAuthoriserSig(bytes memory _data, uint _deadline) internal view returns (Auth.Signature memory) {
+    return _computeSig(authoriser1_key, _data, _deadline);
   }
 
   function _computeOwnerSig(bytes memory _data, uint _deadline) internal view returns (Auth.Signature memory) {
@@ -64,28 +64,13 @@ abstract contract TestBase01 is Test {
     });
   }
 
-  function _pixel8_mint(address _wallet, uint _tokenId, string memory _uri, uint _points) internal {
-    Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
-      wallet: _wallet,
-      tokenId: _tokenId,
-      uri: _uri,
-      points: _points,
-      authSig: _computeMinterSig(
-        abi.encodePacked(_wallet, _tokenId, _uri, _points), 
-        block.timestamp + 10 seconds
-      )
-    });
-
-    pixel8.mint(params);
-  }
-
   function _pixel8_reveal(address _wallet, uint _tokenId, string memory _uri, uint _points) internal {
     Pixel8.MintRevealParams memory params = Pixel8.MintRevealParams({
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
       points: _points,
-      authSig: _computeMinterSig(
+      authSig: _computeAuthoriserSig(
         abi.encodePacked(_wallet, _tokenId, _uri, _points), 
         block.timestamp + 10 seconds
       )
@@ -127,8 +112,8 @@ contract MockERC721 is ERC721 {
     _safeBatchTransfer(msg.sender, from, to, ids, data);
   }
 
-  function batchTransfer(address from, address to, uint count, bytes memory data) public {
-    _safeBatchTransfer(msg.sender, from, to, count, data);
+  function batchTransfer(address from, address to, uint256 count, bytes memory data) public returns (uint256) {
+    return _safeBatchTransfer(msg.sender, from, to, count, data);
   }
 
   function tokenURI(uint256 /*id*/) public pure override returns (string memory) {

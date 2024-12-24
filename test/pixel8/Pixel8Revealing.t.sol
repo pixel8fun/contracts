@@ -12,13 +12,14 @@ contract Pixel8Revealing is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
 
-    vm.startPrank(wallet1);
-    _pixel8_mint(wallet1, 1, "", 1);
-    _pixel8_mint(wallet1, 2, "", 1);
-    vm.stopPrank();
+    vm.prank(owner1);
+    pixel8.setPool(pool1);
+
+    vm.prank(pool1);
+    pixel8.batchMint(wallet1, 1, 2);
   }
 
-  function test_RevealWithMinterAuthorisation_Succeeds() public {
+  function test_RevealWithAuthorisation_Succeeds() public {
     vm.prank(wallet1);
     _pixel8_reveal(wallet1, 1, "uri1", 1);
 
@@ -34,7 +35,7 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(pixel8.numRevealed(), 2, "post 2: revealed count");
   }
 
-  function test_RevealWithMinterAuthorisation_EmitsEvent() public {
+  function test_RevealWithAuthorisation_EmitsEvent() public {
     vm.recordLogs();
 
     vm.prank(wallet1);
@@ -53,7 +54,7 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(tokenId, 1, "Invalid token id");
   }
 
-  function test_RevealWithMinterAuthorisation_WhenCallerNotRevealer_Succeeds() public {
+  function test_RevealWithAuthorisation_WhenCallerNotRevealer_Succeeds() public {
     vm.prank(wallet2);
     _pixel8_reveal(wallet1, 1, "uri1", 1);
 
@@ -62,9 +63,9 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(pixel8.numRevealed(), 1, "post 1: revealed count");
   }
 
-  function test_RevealWithMinterAuthorisation_AwardsPoints() public {
+  function test_RevealWithAuthorisation_AwardsPoints() public {
     vm.prank(wallet1);
-    _pixel8_reveal(wallet1, 1, "uri1", 1);    
+    _pixel8_reveal(wallet1, 1, "uri1", 3);    
 
     assertEq(pixel8.tokenURI(1), "uri1");
     assertEq(pixel8.revealed(1), true);
@@ -79,7 +80,7 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(pixel8.points(wallet2), 0);
   }
 
-  function test_RevealWithNotMinterAuthorisation_Fails() public {
+  function test_RevealWithNotAuthorisation_Fails() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, wallet1));
     pixel8.reveal(Pixel8.MintRevealParams({
@@ -116,7 +117,7 @@ contract Pixel8Revealing is Pixel8TestBase {
       tokenId: 1,
       uri: "uri",
       points: 1,
-      authSig: _computeMinterSig(
+      authSig: _computeAuthoriserSig(
         abi.encodePacked(wallet1, uint(1), "uri", uint(1)),
         block.timestamp - 1 seconds
       )

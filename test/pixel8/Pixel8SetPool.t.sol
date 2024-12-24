@@ -14,8 +14,8 @@ contract Pixel8SetPool is Pixel8TestBase {
   }
 
   function test_SetPoolWhenNotOwner_Fails() public {
-    vm.prank(minter1);
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter1));
+    vm.prank(authoriser1);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, authoriser1));
     pixel8.setPool(address(0x789));
 
     address random = address(0x8876);

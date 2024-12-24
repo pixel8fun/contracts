@@ -98,4 +98,19 @@ library LibErrors {
    * @dev The pool has already been set.
    */
   error PoolAlreadySet();
+
+  /**
+   * @dev The token id is invalid.
+   */
+  error InvalidTokenId(uint256 tokenId);
+
+  /**
+   * @dev The token cannot be force swapped because it is owned by the pool.
+   */
+  error TokenOwnedByPool(uint256 tokenId);
+
+  /**
+   * @dev The token cannot be force swapped because it is on cooldown.
+   */
+  error TokenOnCooldown(uint256 tokenId);
 }

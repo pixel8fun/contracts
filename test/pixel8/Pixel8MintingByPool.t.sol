@@ -16,6 +16,7 @@ contract Pixel8MintingByPool is Pixel8TestBase {
   }
 
   function test_MintByPool_Succeeds() public {
+    uint256 currentTime = block.timestamp;
     vm.prank(pool1);
     pixel8.batchMint(wallet1, 1, 2);
 
@@ -30,6 +31,10 @@ contract Pixel8MintingByPool is Pixel8TestBase {
 
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 0), 1);
     assertEq(pixel8.tokenOfOwnerByIndex(wallet1, 1), 2);
+
+    // Check lastPoolBuyTime is set correctly
+    assertEq(pixel8.lastPoolBuyTime(1), currentTime);
+    assertEq(pixel8.lastPoolBuyTime(2), currentTime);
   }
 
   function test_MintByPool_InvokesReceiver() public {
@@ -56,8 +61,8 @@ contract Pixel8MintingByPool is Pixel8TestBase {
     vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, owner1));
     pixel8.batchMint(wallet1, 1, 2);
 
-    vm.prank(minter1);
-    vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, minter1));
+    vm.prank(authoriser1);
+    vm.expectRevert(abi.encodeWithSelector(LibErrors.Unauthorized.selector, authoriser1));
     pixel8.batchMint(wallet1, 1, 2);
   }
 

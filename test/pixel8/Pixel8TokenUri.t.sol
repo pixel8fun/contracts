@@ -11,10 +11,11 @@ contract Pixel8TokenUri is Pixel8TestBase {
   function setUp() virtual override public {
     super.setUp();
 
-    string memory uri = "";
+    vm.prank(owner1);
+    pixel8.setPool(pool1);
 
-    vm.prank(wallet1);
-    _pixel8_mint(wallet1, 1, uri, 1);        
+    vm.prank(pool1);
+    pixel8.batchMint(wallet1, 1, 1);
   }
 
   function test_TokenUriReturnsDefaultUri() public {
