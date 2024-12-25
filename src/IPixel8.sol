@@ -40,4 +40,14 @@ interface IPixel8 is IERC721 {
   * @dev Get royalty info.
   */
   function getRoyaltyInfo() external view returns (address receiver, uint feeBips);
+
+  /**
+   * @dev Log trading volume.
+   *
+   * This method is used by the pool to record a trade for a given wallet.
+   *
+   * @param _wallet The address of the wallet.
+   * @param _amount The amount of trading volume.
+   */
+  function recordTrade(address _wallet, uint _amount) external;
 }

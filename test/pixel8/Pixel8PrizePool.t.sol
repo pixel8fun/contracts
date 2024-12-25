@@ -65,6 +65,9 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(pixel8.highestNumForceSwaps(), wallet5);
     assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000, "force swaps");
 
+    assertEq(pixel8.highestTradingVolume(), wallet4); 
+    assertEq(pixel8.calculatePrize(wallet4), expectedPrizePoolPot * 100 / 1000, "trading volume");
+
     assertEq(pixel8.highestPoints(0), wallet1);
     assertEq(pixel8.highestPoints(1), wallet2);
     assertEq(pixel8.highestPoints(2), wallet3);
@@ -130,6 +133,13 @@ contract Pixel8PrizePool is Pixel8TestBase {
     for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
       _pixel8_reveal(wallet1, i, "uri1");
     }
+
+    // record trade volume
+    vm.startPrank(pool1);
+    pixel8.recordTrade(wallet1, 0.01 ether);
+    pixel8.recordTrade(wallet4, 0.03 ether); // wallet4 is the highest trading volume
+    pixel8.recordTrade(wallet2, 0.02 ether);
+    vm.stopPrank();
 
     // NOTE: the force-swap payments are included in the prize pool pot + dev royalties
   }

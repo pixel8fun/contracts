@@ -263,6 +263,14 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     emit PoolSet(newPool);
   }
 
+
+  function recordTrade(address _wallet, uint _amount) external override onlyPool {
+    tradingVolume[_wallet] += _amount;
+    if (tradingVolume[_wallet] > tradingVolume[highestTradingVolume]) {
+      highestTradingVolume = _wallet;
+    }
+  }
+
   // token URI
 
   /**
