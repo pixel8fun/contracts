@@ -165,6 +165,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   uint public forceSwapCooldownPeriod;
 
+  /**
+   * @dev The number of tokens that need to be minted before external trading is enabled.
+   */
+  uint public externalTradeThreshold;
+
   // Constructor
 
   /**
@@ -189,6 +194,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint forceSwapCost;
     /** Duration in seconds for the cooldown period between force swaps */
     uint forceSwapCooldownPeriod;
+    /** Number of tokens that need to be minted before external trading is enabled */
+    uint externalTradeThreshold;
   }
   
   /**
@@ -205,6 +212,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
     forceSwapCost = _config.forceSwapCost;
     forceSwapCooldownPeriod = _config.forceSwapCooldownPeriod;
+    externalTradeThreshold = _config.externalTradeThreshold;
 
     _setDefaultRoyalty(address(this), devRoyalties.feeBips + prizePool.feeBips);
   }
@@ -216,6 +224,16 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   function isApprovedForAll(address owner, address spender) public view override(ERC721, IERC721) returns (bool) {
     return (spender == address(this) ||spender == pool || ERC721.isApprovedForAll(owner, spender));
+  }
+
+  /**
+   * @dev Override to restrict transfers to pool only until external trade threshold is met
+   */
+  function _isAuthorized(address caller, address from, uint256 id) internal view virtual override returns (bool) {
+    if (totalSupply < externalTradeThreshold) {
+      return caller == pool;
+    }
+    return super._isAuthorized(caller, from, id);
   }
 
   // Interface

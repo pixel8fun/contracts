@@ -339,8 +339,6 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
   function test_Sell_InsufficientFunds() public {
     _buySomeNfts(1, 2 gwei);
 
-    SellQuote memory q = pool.getSellQuote(pixel8_addr, 1);
-
     // remove funds from pool
     vm.prank(pool_addr);
     payable(owner1).transfer(pool_addr.balance);
