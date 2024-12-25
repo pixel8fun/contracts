@@ -19,6 +19,8 @@ abstract contract TestBase01 is Test {
   address payable wallet1 = payable(address(0x1234567890));
   address payable wallet2 = payable(address(0x1234567890123));
   address payable wallet3 = payable(address(0x1234567890124));
+  address payable wallet4 = payable(address(0x1234567890125));
+  address payable wallet5 = payable(address(0x1234567890126));
 
   Pixel8 public pixel8;
   address pixel8_addr;
@@ -51,7 +53,8 @@ abstract contract TestBase01 is Test {
       gameOverRevealThreshold: 10,
       forceSwapCost: 0.01 ether,
       forceSwapCooldownPeriod: 1 hours,
-      externalTradeThreshold: 1
+      externalTradeThreshold: 1,
+      pool: address(0)
     });
   }
 

@@ -62,7 +62,7 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
     assertEq(pixel8.lastCooldownStartTime(2), currentTime);
   }
 
-  function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastPoolBuyTime() public {
+  function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastCooldownStartTime() public {
     uint[] memory ids = _getIdsToTransfer();
     uint256 initialTime = pixel8.lastCooldownStartTime(1);
 

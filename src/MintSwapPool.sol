@@ -240,6 +240,9 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     if (quote.inputValue < msg.value) {
       payable(sender).transfer(msg.value - quote.inputValue);
     }
+
+    // record trade volume
+    pool.nft.recordTrade(sender, quote.inputValue);
   }
 
   // ---------------------------------------------------------------
@@ -269,6 +272,9 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     pool.nft.batchTransferIds(sender, address(this), tokenIds);
     payable(sender).transfer(quote.outputValue);
     payable(quote.feeReceiver).transfer(quote.fee);
+
+    // record trade volume
+    pool.nft.recordTrade(sender, quote.outputValue);
   }
 
   /**

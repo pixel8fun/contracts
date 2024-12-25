@@ -99,6 +99,9 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     
     // check fee receiver funds
     assertEq(pixel8_addr.balance, q.fee, "received fee");
+
+    // check trade volume
+    assertEq(pixel8.tradingVolume(wallet1), q.inputValue, "trade volume");
   }
 
   function test_Pool_Buy_Initial_BuyAll() public {
@@ -131,6 +134,9 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
     // check fee receiver funds
     assertEq(pixel8_addr.balance, q.fee, "post: received fee");
+
+    // check trade volume
+    assertEq(pixel8.tradingVolume(wallet1), q.inputValue, "post: trade volume");
   }
 
   function test_Pool_Buy_Initial_BuyOne_InsufficientFunds() public {
@@ -195,8 +201,8 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
   }
 
   function test_Pool_BuySpecific_Succeeds() public {
-    _buySomeNfts(1, 2 gwei);
-    _sellSomeNfts(_getTokenIdArray(1, 10), 1 gwei);
+    BuyQuote memory _q1 = _buySomeNfts(1, 2 gwei);
+    SellQuote memory _q2 = _sellSomeNfts(_getTokenIdArray(1, 10), 1 gwei);
 
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 1);
 
@@ -223,6 +229,9 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     
     // check fee receiver funds
     assertEq(pixel8_addr.balance, q.fee * 3, "received fee");
+
+    // check trade volume
+    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + _q2.outputValue + q.inputValue, "post: trade volume");
   }
 
   // getSellQuote
@@ -275,7 +284,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
   // sell
 
   function test_Sell_SellOne() public {
-    _buySomeNfts(1, 2 gwei);
+    BuyQuote memory _q1 = _buySomeNfts(1, 2 gwei);
 
     SellQuote memory q = pool.getSellQuote(pixel8_addr, 1);
 
@@ -296,10 +305,13 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
     // check fee receiver funds
     assertEq(pixel8_addr.balance, q.fee * 2, "received fee");
+
+    // check trade volume
+    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
   }
 
   function test_Sell_SellAll() public {
-    _buySomeNfts(11, 2048 gwei);
+    BuyQuote memory _q1 = _buySomeNfts(11, 2048 gwei);
 
     SellQuote memory q = pool.getSellQuote(pixel8_addr, 11);
 
@@ -320,6 +332,9 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
     // check fee receiver funds
     assertEq(pixel8_addr.balance, q.fee * 2, "received fee");
+
+    // check trade volume
+    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
   }
 
   function test_Sell_SellNone() public {
@@ -350,7 +365,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
 
   // Helper methods
 
-  function _buySomeNfts(uint numItems, uint expectedPrice) private {
+  function _buySomeNfts(uint numItems, uint expectedPrice) private returns (BuyQuote memory) {
     BuyQuote memory q = pool.getBuyQuote(pixel8_addr, numItems);
     assertEq(q.newSpotPrice, expectedPrice);
 
@@ -358,15 +373,19 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     vm.prank(wallet1);
     pool.buy{value: wallet1.balance}(pixel8_addr, numItems);
     assertEq(wallet1.balance, 0, "post buy:wallet1 balance");
+
+    return q;
   }
 
-  function _sellSomeNfts(uint[] memory tokenIds, uint expectedPrice) private {
+  function _sellSomeNfts(uint[] memory tokenIds, uint expectedPrice) private returns (SellQuote memory) {
     SellQuote memory q = pool.getSellQuote(pixel8_addr, tokenIds.length);
     assertEq(q.newSpotPrice, expectedPrice);
 
     vm.prank(wallet1);
     pool.sell(pixel8_addr, tokenIds);
     assertEq(wallet1.balance, q.outputValue, "post sale: wallet1 balance");
+
+    return q;
   }
 }
 
