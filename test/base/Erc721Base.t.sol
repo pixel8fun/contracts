@@ -217,6 +217,19 @@ contract Erc721Base is TestBase01 {
     assertEq(b.ownerOf(1), wallet2);
   }
 
+  function test_SingleTokenApproval_IsAuthorizedOverride() public {
+    b.mint(wallet1, 1, "");
+    
+    vm.prank(wallet2);
+    vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NotAuthorized.selector, wallet1, wallet2, uint(1)));
+    b.transferFrom(wallet1, wallet2, 1);
+
+    b.setIsAuthorizedOverride(true);
+
+    vm.prank(wallet2);
+    b.transferFrom(wallet1, wallet2, 1);
+  }
+
   function test_SingleTokenApproval_TransferCancelsApprovals() public {
     b.mint(wallet1, 1, "");
 

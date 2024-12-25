@@ -266,14 +266,13 @@ abstract contract ERC721 is IERC721, IERC721Metadata, IERC721Enumerable, IERC721
 
   // Low-level methods
 
+  function _isAuthorized(address caller, address from, uint256 id) internal virtual returns (bool) {
+    return caller == from || isApprovedForAll(from, caller) || caller == getApproved[id];
+  }
+
   function _transfer(address caller, address from, address to, uint256 id) internal virtual {
-    bool approved = (
-      caller == from ||
-        isApprovedForAll(from, caller) ||
-        caller == getApproved[id]
-    );
-    if (!approved) {
-      revert ERC721NotAuthorized(from, caller, id);
+    if (!_isAuthorized(caller, from, id)) {
+      revert ERC721NotAuthorized(from, caller, id); 
     }
     
     // update enumeration

@@ -92,7 +92,8 @@ abstract contract TestBase01 is Test {
 
 
 contract MockERC721 is ERC721 {
-  uint lastMintedId;
+  uint public lastMintedId;
+  bool public isAuthorizedOverride;
 
   constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
 
@@ -119,6 +120,17 @@ contract MockERC721 is ERC721 {
 
   function tokenURI(uint256 /*id*/) public pure override returns (string memory) {
     return "uri";
+  }
+
+  function setIsAuthorizedOverride(bool _isAuthorizedOverride) public {
+    isAuthorizedOverride = _isAuthorizedOverride;
+  }
+
+  function _isAuthorized(address caller, address from, uint256 id) internal override returns (bool) {
+    if (isAuthorizedOverride) {
+      return true;
+    }
+    return super._isAuthorized(caller, from, id);
   }
 }
 
