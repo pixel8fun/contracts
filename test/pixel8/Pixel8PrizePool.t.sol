@@ -10,6 +10,9 @@ import { LibErrors } from "src/LibErrors.sol";
 
 contract Pixel8PrizePool is Pixel8TestBase {
   function setUp() public override {
+    defaultPixel8Config = _getDefaultPixel8Config();
+    defaultPixel8Config.forceSwapCooldownPeriod = 0;
+
     super.setUp();
 
     vm.startPrank(owner1);
@@ -30,8 +33,10 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     payable(pixel8_addr).transfer(0.0006 ether);    
 
+    uint expectedPrizePoolPot = 0.0006 ether + 0.015 ether;
+
     assertEq(pixel8.gameOver(), false, "gameOver");
-    assertEq(pixel8.getPrizePoolPot(), 0.0006 ether, "prize pool pot still incrementing");
+    assertEq(pixel8.getPrizePoolPot(), expectedPrizePoolPot, "prize pool pot still incrementing");
     assertEq(pixel8.calculatePrize(wallet1), 0, "no prize claimable yet");
   }
 
@@ -40,27 +45,39 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     payable(pixel8_addr).transfer(0.0006 ether);        
 
+    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+
     assertEq(pixel8.gameOver(), true, "gameOver");
-    assertEq(pixel8.getPrizePoolPot(), 0.0003 ether, "prize pot unchanged once game over");
-    assertEq(pixel8.calculatePrize(wallet1), 0.0003 ether * 45 / 100, "prize claimable yet");
+    assertEq(pixel8.getPrizePoolPot(), expectedPrizePoolPot, "prize pot unchanged once game over");
+  }
+
+  function test_WhenGameIsOver_HaveNoPrizesIfNotWinner() public {
+    _mintAndRevealTiles(10);
+
+    assertEq(pixel8.calculatePrize(owner1), 0, "owner1 is not a winner");
   }
 
   function test_WhenGameIsOver_HaveClaimablePrizes() public {
     _mintAndRevealTiles(10);
 
+    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+    
+    assertEq(pixel8.highestNumForceSwaps(), wallet5);
+    assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000, "force swaps");
+
     assertEq(pixel8.highestPoints(0), wallet1);
     assertEq(pixel8.highestPoints(1), wallet2);
     assertEq(pixel8.highestPoints(2), wallet3);
-
-    assertEq(pixel8.calculatePrize(wallet1), 0.0003 ether * 450 / 1000, "1st points");
-    assertEq(pixel8.calculatePrize(wallet2), 0.0003 ether * 250 / 1000, "2nd points");
-    assertEq(pixel8.calculatePrize(wallet3), 0.0003 ether * 100 / 1000, "3rd points");
+    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * 450 / 1000, "1st points");
+    assertEq(pixel8.calculatePrize(wallet2), expectedPrizePoolPot * 250 / 1000, "2nd points");
+    assertEq(pixel8.calculatePrize(wallet3), expectedPrizePoolPot * 100 / 1000, "3rd points");
   }
 
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
     _mintAndRevealTiles(10);
 
-    uint claimableExpected = 0.0003 ether * 45 / 100;
+    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+    uint claimableExpected = expectedPrizePoolPot * 450 / 1000;
 
     assertEq(pixel8.calculatePrize(wallet1), claimableExpected);
     assertEq(pixel8.prizeClaimed(wallet1), false);
@@ -96,8 +113,24 @@ contract Pixel8PrizePool is Pixel8TestBase {
     // wallet1 - 250 points
     vm.prank(pool1);
     pixel8.batchMint(wallet1, 6, 5);
+
+    // wallet5 - does most force swaps
+    vm.startPrank(wallet2);
+    pixel8.batchTransferRange(wallet2, wallet5, 2); // give two tiles to wallet5
+    vm.deal(wallet2, 0.01 ether);
+    pixel8.forceSwap{value: 0.01 ether}(3, 1); // force swap one tile
+    vm.stopPrank();
+    vm.startPrank(wallet5);
+    vm.deal(wallet5, 0.02 ether);
+    pixel8.forceSwap{value: 0.01 ether}(4, 1); // force swap 1 tile
+    pixel8.forceSwap{value: 0.01 ether}(5, 2); // force swap 1 tile
+    vm.stopPrank();
+
+    // finally do game over
     for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
       _pixel8_reveal(wallet1, i, "uri1");
     }
+
+    // NOTE: the force-swap payments are included in the prize pool pot + dev royalties
   }
 }

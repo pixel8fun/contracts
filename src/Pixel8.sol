@@ -404,11 +404,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   /**
    * @dev Force swap a token with another token
-   * @param from The address initiating the force swap
    * @param fromTokenId The token ID owned by from address
    * @param toTokenId The token ID to swap with
    */
-  function forceSwap(address from, uint256 fromTokenId, uint256 toTokenId) external payable {
+  function forceSwap(uint256 fromTokenId, uint256 toTokenId) external payable {
+    address from = msg.sender;
+    
     // Check that game is not over
     if (gameOver) {
       revert LibErrors.GameOver();
@@ -416,17 +417,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
     // Check that msg.value is sufficient
     if (msg.value < forceSwapCost) {
-      revert LibErrors.InsufficientSenderFunds(msg.sender, forceSwapCost, msg.value);
+      revert LibErrors.InsufficientSenderFunds(from, forceSwapCost, msg.value);
     }
 
     // Check that fromTokenId is owned by from
     if (ownerOf(fromTokenId) != from) {
       revert LibErrors.Unauthorized(from);
-    }
-
-    // Check that caller is owner
-    if (from != msg.sender) {
-      revert LibErrors.Unauthorized(msg.sender);
     }
 
     // Check that tokens are different
@@ -530,8 +526,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
         } else if (i == 2) {
           return prizePool.pot * 100 / 1000; // 10%
         }
-
-        break;
       }
     }
 
