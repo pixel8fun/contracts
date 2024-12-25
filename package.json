@@ -6,15 +6,14 @@
   "author": "v42 Labs <dev@v42.space>",
   "scripts": {
     "prepare": "forge install && git submodule update --init --recursive && husky",
-    "compile": "forge build --sizes",
+    "compile": "forge build --sizes && npx wagmi generate",
     "tests": "forge test",
     "tests-coverage": "forge coverage --report lcov",
     "view-coverage": "genhtml -o ./coverage lcov.info && open coverage/index.html",
     "devnet": "anvil --chain-id 1337",
     "commitlint": "commitlint --edit",
-    "deploy-local": "ENV=local forge script scripts/Deploy.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast",
-    "deploy-testnet": "ENV=testnet forge script scripts/Deploy.s.sol --chain-id 84532 --rpc-url https://sepolia.base.org --private-key $PRIVATE_KEY --broadcast",
-    "verify-testnet": "CHAIN_ID=84532 VERIFIER_URL=https://api-sepolia.basescan.org/api bun ./scripts/verify-contracts.ts"
+    "deploy-local": "bun compile && bun ./scripts/deploy.ts --chain local",
+    "deploy-testnet": "bun compile && bun ./scripts/deploy.ts --chain arbitrumSepolia"
   },
   "commitlint": {
     "extends": [
@@ -25,7 +24,11 @@
   "devDependencies": {
     "@commitlint/cli": "^18.6.1",
     "@commitlint/config-conventional": "^18.6.2",
+    "@wagmi/cli": "^2.1.22",
+    "bigval": "^1.7.0",
     "bun": "^1.1.2",
-    "husky": "^9.0.11"
+    "husky": "^9.0.11",
+    "shelljs": "^0.8.5",
+    "yargs": "^17.7.2"
   }
 }

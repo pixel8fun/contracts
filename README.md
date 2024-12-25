@@ -78,10 +78,6 @@ $ bun view-coverage
 
 ## Deployment
 
-_Notes:_
-
-* _[CREATE2](https://book.getfoundry.sh/tutorials/create2-tutorial) is used for deployment, so the address will always be the same as long as the deployment wallet and bytecode are the same, irrespective of chain, nonce, etc._
-
 ### Local (anvil)
 
 To deploy locally, first run a local devnet:
@@ -96,7 +92,7 @@ Then run:
 $ bun deploy-local
 ```
 
-### Public testnet: Base sepolia
+### Public testnet: Arbitrum sepolia
 
 Set the following environment variables:
 
@@ -111,11 +107,7 @@ Then run:
 $ bun deploy-testnet
 ```
 
-Save the new deployed addresses and constructor args into `scripts/verify-contracts.ts` and then run:
-
-```shell
-$ bun verify-testnet
-```
+This should also verify contract code on Arbiscan.
 
 ## License
 
