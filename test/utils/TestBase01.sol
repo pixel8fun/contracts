@@ -53,7 +53,8 @@ abstract contract TestBase01 is Test {
       gameOverRevealThreshold: 10,
       forceSwapCost: 0.01 ether,
       forceSwapCooldownPeriod: 1 hours,
-      externalTradeThreshold: 1
+      externalTradeThreshold: 1,
+      pool: address(0)
     });
   }
 

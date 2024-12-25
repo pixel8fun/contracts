@@ -196,6 +196,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint forceSwapCooldownPeriod;
     /** Number of tokens that need to be minted before external trading is enabled */
     uint externalTradeThreshold;
+    /** Pool address */
+    address pool;
   }
   
   /**
@@ -204,6 +206,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") Ownable(_config.owner) {
     authoriser = _config.authoriser;
     defaultImage = _config.defaultImage;
+    pool = _config.pool;
 
     prizePool.feeBips = _config.prizePoolFeeBips;
     gameOverRevealThreshold = _config.gameOverRevealThreshold;

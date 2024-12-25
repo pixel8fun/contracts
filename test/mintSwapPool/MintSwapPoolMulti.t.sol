@@ -25,7 +25,8 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
       gameOverRevealThreshold: 100,
       forceSwapCost: 0.01 ether,
       forceSwapCooldownPeriod: 1 hours,
-      externalTradeThreshold: 5
+      externalTradeThreshold: 5,
+      pool: address(0)
     });
     pixel8_2 = new Pixel8(config);
     pixel8_2_addr = address(pixel8_2);
