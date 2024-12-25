@@ -24,7 +24,8 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
       prizePoolFeeBips: 1000, // 10%
       gameOverRevealThreshold: 100,
       forceSwapCost: 0.01 ether,
-      forceSwapCooldownPeriod: 1 hours
+      forceSwapCooldownPeriod: 1 hours,
+      externalTradeThreshold: 5
     });
     pixel8_2 = new Pixel8(config);
     pixel8_2_addr = address(pixel8_2);
@@ -69,7 +70,6 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     assertEq(pool_addr.balance, (q1.inputValue - q1.fee) + (q2.inputValue - q2.fee), "pool balance after buy2");
 
     // Sell to first pool
-    SellQuote memory sq1 = pool.getSellQuote(pixel8_addr, 1);
     vm.prank(wallet1);
     pool.sell(pixel8_addr, _getTokenIdArray(1, 10));
 
@@ -79,7 +79,6 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     assertEq(pool_addr.balance, q2.inputValue - q2.fee, "pool balance after sell1");
 
     // Sell to second pool
-    SellQuote memory sq2 = pool.getSellQuote(pixel8_2_addr, 1);
     vm.prank(wallet1);
     pool.sell(pixel8_2_addr, _getTokenIdArray(1, 10));
 

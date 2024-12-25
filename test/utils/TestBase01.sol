@@ -23,13 +23,18 @@ abstract contract TestBase01 is Test {
   Pixel8 public pixel8;
   address pixel8_addr;
 
+  Pixel8.Config public defaultPixel8Config;
+
   constructor() payable {
     c.log("Test contract address", address(this));
     c.log("msg.sender", msg.sender);
   }
 
-  function setUp() public virtual {    
-    pixel8 = new Pixel8(_getDefaultPixel8Config());
+  function setUp() public virtual {   
+    if (defaultPixel8Config.owner == address(0)) {
+      defaultPixel8Config = _getDefaultPixel8Config();
+    }
+    pixel8 = new Pixel8(defaultPixel8Config);
     pixel8_addr = address(pixel8);
   }
 
@@ -45,7 +50,8 @@ abstract contract TestBase01 is Test {
       prizePoolFeeBips: 1000, /* 1000 bips = 10% */
       gameOverRevealThreshold: 10,
       forceSwapCost: 0.01 ether,
-      forceSwapCooldownPeriod: 1 hours
+      forceSwapCooldownPeriod: 1 hours,
+      externalTradeThreshold: 1
     });
   }
 
@@ -126,7 +132,7 @@ contract MockERC721 is ERC721 {
     isAuthorizedOverride = _isAuthorizedOverride;
   }
 
-  function _isAuthorized(address caller, address from, uint256 id) internal override returns (bool) {
+  function _isAuthorized(address caller, address from, uint256 id) internal view override returns (bool) {
     if (isAuthorizedOverride) {
       return true;
     }
