@@ -1,13 +1,13 @@
 import { BigVal } from 'bigval'
+import shell from 'shelljs';
 import { http, createPublicClient, createWalletClient, encodeFunctionData, getContract } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { type Chain, arbitrumSepolia, localhost } from 'viem/chains';
-import yargs from 'yargs/yargs'
-const shell = require('shelljs')
+import yargs from 'yargs';
 
 const Pixel8Artifact = require('../out/Pixel8.sol/Pixel8.json')
 const MultiSwapPoolArtifact = require('../out/MintSwapPool.sol/MintSwapPool.json')
-import { mintSwapPoolAbi, pixel8Abi } from './generated';
+import { mintSwapPoolAbi, pixel8Abi } from '../dist/esm/abi';
 
 const ANVIL_ACCOUNT_1_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 

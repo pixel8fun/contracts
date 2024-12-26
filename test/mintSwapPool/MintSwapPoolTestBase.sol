@@ -21,7 +21,7 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
       defaultPoolConfig = _getDefaultPoolConfig();
     }
 
-    pool = new MintSwapPool(owner1);
+    pool = new MintSwapPool(owner1, owner1);
     pool_addr = payable(address(pool));
     
     vm.startPrank(owner1);

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "preserveSymlinks": true,
+    "lib": ["es2021", "dom"],
+    "target": "es2021",
+    "rootDir": "./src-ts"
+  },
+  "include": ["src-ts/**/*"],
+  "exclude": ["node_modules", "dist"]
+} 

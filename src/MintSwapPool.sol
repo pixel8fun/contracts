@@ -47,12 +47,19 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   }
 
   // Mapping from NFT contract address to pool ID
+  uint public poolCount;
   mapping(address => uint) public poolIds;
+  mapping(uint => Pool) public pools;
 
-  // Array of all pools
-  Pool[] public pools;
+  address public poolCreator;
 
-  constructor(address owner) Ownable(owner) {}
+  constructor(address _owner, address _poolCreator) Ownable(_owner) {
+    poolCreator = _poolCreator;
+  }
+
+  function setPoolCreator(address _poolCreator) public onlyOwner {
+    poolCreator = _poolCreator;
+  }
 
   /**
    * @dev Get the pool for a given NFT contract.
@@ -63,14 +70,14 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     if (poolId == 0) {
         revert LibErrors.PoolDoesNotExist(nftAddress);
     }
-    return pools[poolId - 1];
+    return pools[poolId];
   }
 
   /**
    * @dev Create a new pool for an NFT contract.
    * @param config Pool configuration.
    */
-  function create(PoolConfig memory config) external onlyOwner {
+  function create(PoolConfig memory config) external onlyPoolCreator {
     if (!validateSpotPrice(config.curve.startPriceWei)) {
       revert LibErrors.InvalidMintPrice(config.curve.startPriceWei);
     }
@@ -97,8 +104,9 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
       funds: 0
     });
 
-    pools.push(pool);
-    poolIds[config.nft] = pools.length;
+    poolCount++;
+    pools[poolCount] = pool;
+    poolIds[config.nft] = poolCount;
   }
 
   // ---------------------------------------------------------------
@@ -127,7 +135,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   function buySpecific(address nftAddress, uint _id) external payable returns (BuyQuote memory quote) {
     Pool storage pool = _getPool(nftAddress);
     
-    address sender = msg.sender;
+    address sender = _msgSender();
 
     quote = _preBuy(pool, 1);
 
@@ -144,7 +152,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   function buy(address nftAddress, uint numItems) external payable returns (BuyQuote memory quote) {
     Pool storage pool = _getPool(nftAddress);
 
-    address sender = msg.sender;
+    address sender = _msgSender();
 
     quote = _preBuy(pool, numItems);
 
@@ -209,7 +217,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
    * @param numItems Number of NFTs to buy.
    */
   function _preBuy(Pool storage pool, uint numItems) internal returns (BuyQuote memory quote) {
-    address sender = msg.sender;
+    address sender = _msgSender();
 
     quote = _getBuyQuote(pool, numItems);
 
@@ -253,7 +261,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   function sell(address nftAddress, uint[] calldata tokenIds) external returns (SellQuote memory quote) {
     Pool storage pool = _getPool(nftAddress);
 
-    address sender = msg.sender;
+    address sender = _msgSender();
 
     quote = _getSellQuote(pool, tokenIds.length);
 
@@ -333,4 +341,18 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
   ) external pure override returns (bytes4) {
     return IERC721TokenReceiver.onERC721Received.selector;
   }
+
+
+  // Modifiers
+
+  /**
+   * @dev Only the pool creator can call this function.
+   */
+  modifier onlyPoolCreator() {
+    if (_msgSender() != poolCreator) {
+      revert LibErrors.Unauthorized(_msgSender());
+    }
+    _;
+  }
+
 }
