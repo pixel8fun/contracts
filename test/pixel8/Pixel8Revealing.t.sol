@@ -89,8 +89,9 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
+      points: 50,
       authSig: _computeOwnerSig(
-        abi.encodePacked(wallet1, uint(1), "uri1"),
+        abi.encodePacked(wallet1, uint(1), "uri1", uint(50)),
         block.timestamp + 10 seconds
       )
     }));
@@ -101,9 +102,10 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri1",
+      points: 50,
       authSig: _computeSig(
         0x123,
-        abi.encodePacked(wallet1, uint(1), "uri1"),
+        abi.encodePacked(wallet1, uint(1), "uri1", uint(50)),
         block.timestamp + 10 seconds
       )
     }));
@@ -116,8 +118,9 @@ contract Pixel8Revealing is Pixel8TestBase {
       wallet: wallet1,
       tokenId: 1,
       uri: "uri",
+      points: 50,
       authSig: _computeAuthoriserSig(
-        abi.encodePacked(wallet1, uint(1), "uri"),
+        abi.encodePacked(wallet1, uint(1), "uri", uint(50)),
         block.timestamp - 1 seconds
       )
     }));

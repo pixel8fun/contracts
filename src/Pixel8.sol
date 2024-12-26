@@ -65,6 +65,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     address wallet;
     uint256 tokenId;
     string uri;
+    uint256 points;
     Auth.Signature authSig;
   }
 
@@ -314,13 +315,13 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @param _params The reveal parameters.
    */
   function reveal(MintRevealParams calldata _params) external {
-    _assertValidSignature(msg.sender, authoriser, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri));
+    _assertValidSignature(msg.sender, authoriser, _params.authSig, abi.encodePacked(_params.wallet, _params.tokenId, _params.uri, _params.points));
 
     _requireOwned(_params.tokenId);
 
     _reveal(_params.tokenId, _params.uri);
 
-    _addPlayerPoints(_params.wallet, 50);
+    _addPlayerPoints(_params.wallet, _params.points);
   }
 
   /**

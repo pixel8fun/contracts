@@ -80,8 +80,9 @@ abstract contract TestBase01 is Test {
       wallet: _wallet,
       tokenId: _tokenId,
       uri: _uri,
+      points: 50,
       authSig: _computeAuthoriserSig(
-        abi.encodePacked(_wallet, _tokenId, _uri), 
+        abi.encodePacked(_wallet, _tokenId, _uri, uint(50)), 
         block.timestamp + 10 seconds
       )
     });
