@@ -9,16 +9,19 @@ import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 contract Pixel8Basic is Pixel8TestBase {
   function test_DefaultConfig() public {
     assertEq(pixel8.VERSION(), 1, "version");
-    assertEq(pixel8.name(), "Pixel8", "name");
-    assertEq(pixel8.symbol(), "PIXEL8", "symbol");
+    assertEq(pixel8.name(), defaultPixel8Config.name, "name");
+    assertEq(pixel8.symbol(), defaultPixel8Config.symbol, "symbol");
     assertEq(pixel8.owner(), owner1, "owner");
     assertEq(pixel8.authoriser(), authoriser1, "authoriser");
     assertEq(pixel8.pool(), address(0), "pool");
     assertEq(pixel8.defaultImage(), "img", "defaultImg");
-    assertEq(pixel8.forceSwapCost(), 0.01 ether, "forceSwapCost");
     assertEq(pixel8.gameOver(), false, "gameOver");
     assertEq(pixel8.gameOverRevealThreshold(), 10, "gameOverRevealThreshold");
     assertEq(pixel8.totalSupply(), 0, "totalSupply");
+
+    Pixel8.ForceSwap memory forceSwapConfig = pixel8.getForceSwapConfig();
+    assertEq(forceSwapConfig.cost, 0.01 ether, "forceSwapConfig.cost");
+    assertEq(forceSwapConfig.cooldownPeriod, 1 hours, "forceSwapConfig.cooldownPeriod");
 
     Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyalties();
     assertEq(devRoyalties.amount, 0, "devRoyalties.amount should start at 0");

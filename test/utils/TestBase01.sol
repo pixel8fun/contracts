@@ -47,19 +47,28 @@ abstract contract TestBase01 is Test {
 
   function _getDefaultPixel8Config() internal view returns (Pixel8.Config memory) {
     return Pixel8.Config({
+      name: "Pixel8",
+      symbol: "PIXEL8",
       owner: owner1,
       authoriser: authoriser1,
-      devRoyaltyFeeBips: 1000, /* 1000 bips = 10% */
-      devRoyaltyReceiver: owner1,
-      creatorRoyaltyFeeBips: 500, /* 500 bips = 5% */
-      creatorRoyaltyReceiver: creator1,
+      devRoyalty: Pixel8.Royalties({
+        amount: 0.01 ether, // the Pixel8 constructor should ignore this
+        receiver: owner1,
+        feeBips: 1000 // 10%
+      }),
+      creatorRoyalty: Pixel8.Royalties({
+        amount: 0.01 ether, // the Pixel8 constructor should ignore this
+        receiver: creator1,
+        feeBips: 500 // 5%
+      }),
       defaultImage: "img",
       prizePoolFeeBips: 1000, /* 1000 bips = 10% */
       gameOverRevealThreshold: 10,
-      forceSwapCost: 0.01 ether,
-      forceSwapCooldownPeriod: 1 hours,
-      externalTradeThreshold: 1,
-      pool: address(0)
+      forceSwapConfig: Pixel8.ForceSwap({
+        cost: 0.01 ether,
+        cooldownPeriod: 1 hours
+      }),
+      externalTradeThreshold: 1
     });
   }
 

@@ -11,7 +11,7 @@ import { LibErrors } from "src/LibErrors.sol";
 contract Pixel8PrizePool is Pixel8TestBase {
   function setUp() public override {
     defaultPixel8Config = _getDefaultPixel8Config();
-    defaultPixel8Config.forceSwapCooldownPeriod = 0;
+    defaultPixel8Config.forceSwapConfig.cooldownPeriod = 0; // so that we can test force swap scoring
 
     super.setUp();
 

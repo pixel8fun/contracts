@@ -9,15 +9,12 @@ import { IERC721 } from "openzeppelin/interfaces/IERC721.sol";
 import { ERC2981 } from "openzeppelin/token/common/ERC2981.sol";
 import { IERC4906 } from "openzeppelin/interfaces/IERC4906.sol";
 import { Base64 } from "openzeppelin/utils/Base64.sol";
-import { Strings } from "openzeppelin/utils/Strings.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { IPixel8 } from "./IPixel8.sol";
 
 
 contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
-  using Strings for uint256;
-
   /**
    * @dev The version of the contract.
    */
@@ -31,7 +28,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   /**
    * @dev Emitted when a force swap occurs.
    */
-  event ForceSwap(uint256 fromTokenId, uint256 toTokenId);
+  event ForceSwapped(uint256 fromTokenId, uint256 toTokenId);
 
   /**
    * @dev Emitted when the pool is set.
@@ -46,6 +43,16 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint pot;
     /** The trading fee for the prize pool. */
     uint96 feeBips;
+  }
+
+  /**
+   * @dev Force-swap config.
+   */
+  struct ForceSwap {
+    /** Cost in wei to perform a force swap */
+    uint cost;
+    /** Duration in seconds for the cooldown period between force swaps */
+    uint cooldownPeriod;
   }
 
   /**
@@ -155,9 +162,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   address public highestNumForceSwaps;
 
   /**
-   * @dev Cost in wei to perform a force swap
+   * @dev Force-swap config.
    */
-  uint public forceSwapCost;
+  ForceSwap public forceSwapConfig;
 
   /**
    * @dev The trading volume for each wallet.
@@ -169,66 +176,52 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   address public highestTradingVolume;
 
   /**
-   * @dev The cooldown period duration in seconds.
-   */
-  uint public forceSwapCooldownPeriod;
-
-  /**
    * @dev The number of tokens that need to be minted before external trading is enabled.
    */
   uint public externalTradeThreshold;
 
   // Constructor
 
-  /**
-   * @dev Configuration parameters for constructor.
-   */
   struct Config {
+    /** Name of the contract */
+    string name;
+    /** Symbol of the contract */
+    string symbol;
     /** Owner. */
     address owner;
     /** Authoriser. */
     address authoriser;
     /** Dev royalty receiver  */
-    address devRoyaltyReceiver;
-    /** Dev royalty fee */
-    uint96 devRoyaltyFeeBips;
+    Royalties devRoyalty;
     /** Creator royalty receiver */
-    address creatorRoyaltyReceiver;
-    /** Creator royalty fee */
-    uint96 creatorRoyaltyFeeBips;
+    Royalties creatorRoyalty;
     /** Default token image as a data URI. */
     string defaultImage;
     /** Prize pool trading fee. */
     uint96 prizePoolFeeBips;
     /** Game over reveal threshold - the game has ended once the given on. of tiles have been revealed.*/
     uint gameOverRevealThreshold;
-    /** Cost in wei to perform a force swap */
-    uint forceSwapCost;
-    /** Duration in seconds for the cooldown period between force swaps */
-    uint forceSwapCooldownPeriod;
+    /** Force swap config */
+    ForceSwap forceSwapConfig;
     /** Number of tokens that need to be minted before external trading is enabled */
     uint externalTradeThreshold;
-    /** Pool address */
-    address pool;
   }
   
   /**
    * @dev Constructor.
    */
-  constructor(Config memory _config) ERC721("Pixel8", "PIXEL8") Ownable(_config.owner) {
+  constructor(Config memory _config) ERC721(_config.name, _config.symbol) Ownable(_config.owner) {
     authoriser = _config.authoriser;
     defaultImage = _config.defaultImage;
-    pool = _config.pool;
 
     prizePool.feeBips = _config.prizePoolFeeBips;
     gameOverRevealThreshold = _config.gameOverRevealThreshold;
 
-    devRoyalties.receiver = _config.devRoyaltyReceiver;
-    devRoyalties.feeBips = _config.devRoyaltyFeeBips;
-    creatorRoyalties.receiver = _config.creatorRoyaltyReceiver;
-    creatorRoyalties.feeBips = _config.creatorRoyaltyFeeBips;
-    forceSwapCost = _config.forceSwapCost;
-    forceSwapCooldownPeriod = _config.forceSwapCooldownPeriod;
+    devRoyalties.receiver = _config.devRoyalty.receiver;
+    devRoyalties.feeBips = _config.devRoyalty.feeBips;
+    creatorRoyalties.receiver = _config.creatorRoyalty.receiver;
+    creatorRoyalties.feeBips = _config.creatorRoyalty.feeBips;
+    forceSwapConfig = _config.forceSwapConfig;
     externalTradeThreshold = _config.externalTradeThreshold;
 
     _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips + prizePool.feeBips);
@@ -322,6 +315,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   function getPrizePool() external view returns (PrizePool memory) {
     return prizePool;
+  }
+
+  function getForceSwapConfig() external view returns (ForceSwap memory) {
+    return forceSwapConfig;
   }
 
   // Functions - reveal token
@@ -445,8 +442,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // Check that msg.value is sufficient
-    if (msg.value < forceSwapCost) {
-      revert LibErrors.InsufficientSenderFunds(from, forceSwapCost, msg.value);
+    if (msg.value < forceSwapConfig.cost) {
+      revert LibErrors.InsufficientSenderFunds(from, forceSwapConfig.cost, msg.value);
     }
 
     // Check that fromTokenId is owned by from
@@ -468,11 +465,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // Check cooldown period
-    if (block.timestamp - lastCooldownStartTime[toTokenId] < forceSwapCooldownPeriod) {
+    if (block.timestamp - lastCooldownStartTime[toTokenId] < forceSwapConfig.cooldownPeriod) {
       revert LibErrors.TokenOnCooldown(toTokenId);
     }
 
-    if (block.timestamp - lastCooldownStartTime[fromTokenId] < forceSwapCooldownPeriod) {
+    if (block.timestamp - lastCooldownStartTime[fromTokenId] < forceSwapConfig.cooldownPeriod) {
       revert LibErrors.TokenOnCooldown(fromTokenId);
     }
 
@@ -490,7 +487,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
       highestNumForceSwaps = from;
     }
 
-    emit ForceSwap(fromTokenId, toTokenId);
+    emit ForceSwapped(fromTokenId, toTokenId);
   }
 
   // prize pool

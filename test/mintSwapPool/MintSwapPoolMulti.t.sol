@@ -16,21 +16,7 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
     super.setUp();
 
     // setup second NFT contract
-    Pixel8.Config memory config = Pixel8.Config({
-      owner: owner1,
-      authoriser: authoriser1,
-      devRoyaltyReceiver: owner1,
-      devRoyaltyFeeBips: 1000, // 10%
-      creatorRoyaltyReceiver: creator1,
-      creatorRoyaltyFeeBips: 500, // 5%
-      defaultImage: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iYmxhY2siLz48L3N2Zz4=",
-      prizePoolFeeBips: 1000, // 10%
-      gameOverRevealThreshold: 100,
-      forceSwapCost: 0.01 ether,
-      forceSwapCooldownPeriod: 1 hours,
-      externalTradeThreshold: 5,
-      pool: address(0)
-    });
+    Pixel8.Config memory config = _getDefaultPixel8Config();
     pixel8_2 = new Pixel8(config);
     pixel8_2_addr = address(pixel8_2);
 

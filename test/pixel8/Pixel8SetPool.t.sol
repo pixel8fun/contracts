@@ -8,14 +8,6 @@ import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { LibErrors } from "src/LibErrors.sol";
 
 contract Pixel8SetPool is Pixel8TestBase {
-  function test_SetPoolInConstructor_Succeeds() public {
-    address poolAddr = address(0x789);
-    Pixel8.Config memory config = _getDefaultPixel8Config();
-    config.pool = poolAddr;
-    pixel8 = new Pixel8(config);
-    assertEq(pixel8.pool(), poolAddr);
-  }
-
   function test_SetPoolWhenOwnerAndNotSet_Succeeds() public {
     address poolAddr = address(0x789);
     vm.prank(owner1);
