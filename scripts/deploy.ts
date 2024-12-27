@@ -53,7 +53,9 @@ const getPixel8ConstructorArgs = (chainInfo: typeof chains[keyof typeof chains])
   authoriser: chainInfo.authoriser,
   devRoyaltyReceiver: chainInfo.devRoyaltyReceiver,
   devRoyaltyFeeBips: 100n, // 1%
-  prizePoolFeeBips: 650n, // 6.5% 
+  creatorRoyaltyReceiver: chainInfo.devRoyaltyReceiver,
+  creatorRoyaltyFeeBips: 100n, // 1% 
+  prizePoolFeeBips: 500n, // 5% 
   defaultImage: DEFAULT_PIXEL8_IMG,
   gameOverRevealThreshold: 1764n, // all tiles revealed
   forceSwapCost: toEtherBigInt(0.1),
