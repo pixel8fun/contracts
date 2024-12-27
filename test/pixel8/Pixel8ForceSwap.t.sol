@@ -250,7 +250,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     }
 
     function _calculateForceSwapFeeMinusDevRoyalties(uint256 _amount) internal view returns (uint256) {
-        uint totalBips = pixel8.getDevRoyalties().feeBips + pixel8.getPrizePool().feeBips;
-        return _amount - _amount * pixel8.getDevRoyalties().feeBips / totalBips;
+        uint totalBips = pixel8.getDevRoyalties().feeBips + pixel8.getCreatorRoyalties().feeBips + pixel8.getPrizePool().feeBips;
+        return _amount - (_amount * (pixel8.getDevRoyalties().feeBips + pixel8.getCreatorRoyalties().feeBips) / totalBips);
     }
 } 

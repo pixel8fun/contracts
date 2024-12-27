@@ -16,6 +16,9 @@ abstract contract TestBase01 is Test {
   uint public authoriser1_key = 0x1234;
   address payable authoriser1 = payable(vm.addr(authoriser1_key));
 
+  uint public creator1_key = 0x1235;
+  address payable creator1 = payable(vm.addr(creator1_key));
+
   address payable wallet1 = payable(address(0x1234567890));
   address payable wallet2 = payable(address(0x1234567890123));
   address payable wallet3 = payable(address(0x1234567890124));
@@ -47,8 +50,10 @@ abstract contract TestBase01 is Test {
       owner: owner1,
       authoriser: authoriser1,
       devRoyaltyFeeBips: 1000, /* 1000 bips = 10% */
-      defaultImage: "img",
       devRoyaltyReceiver: owner1,
+      creatorRoyaltyFeeBips: 500, /* 500 bips = 5% */
+      creatorRoyaltyReceiver: creator1,
+      defaultImage: "img",
       prizePoolFeeBips: 1000, /* 1000 bips = 10% */
       gameOverRevealThreshold: 10,
       forceSwapCost: 0.01 ether,

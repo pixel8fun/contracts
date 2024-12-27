@@ -25,7 +25,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.newSpotPrice, 2 gwei);
 
     uint inputValue = 2 gwei;
-    uint fee = inputValue / 5; // 20%
+    uint fee = inputValue * 25 / 100; // 25%
 
     assertEq(q.fee, fee);
     assertEq(q.inputValue, inputValue + fee);
@@ -49,7 +49,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
       1024 gwei +
       2048 gwei; // 4094 gwei
 
-    uint fee = inputValue / 5; // 20%
+    uint fee = inputValue * 25 / 100; // 25%
 
     assertEq(q.fee, fee, "fee");
     assertEq(q.inputValue, inputValue + fee, "total");
@@ -244,7 +244,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(q.newSpotPrice, 1 gwei, "new spot price");
 
     uint outputValue = 2 gwei;
-    uint fee = outputValue / 5; // 20%
+    uint fee = outputValue * 25 / 100; // 25%
 
     assertEq(q.fee, fee, "fee");
     assertEq(q.outputValue, outputValue - fee, "output value");
@@ -270,7 +270,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
       4 gwei +
       2 gwei; // 4094 gwei
 
-    uint fee = outputValue / 5; // 20%
+    uint fee = outputValue * 25 / 100; // 25%
 
     assertEq(q.fee, fee, "fee");
     assertEq(q.outputValue, outputValue - fee, "output value");

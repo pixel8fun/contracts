@@ -23,9 +23,12 @@ contract Pixel8PrizePool is Pixel8TestBase {
   }
 
   function test_GetPrizePoolPot_PriorToGameOver_CalculatesBasedOnBalance() public {
-    assertEq(pixel8.getPrizePoolPot(), 0.0003 ether, "getPrizePoolPot");
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePool = 0.0006 ether * 1000 / totalBips;
+    assertEq(pixel8.getPrizePoolPot(), expectedPrizePool, "getPrizePoolPot");
+    
     payable(pixel8_addr).transfer(0.0006 ether);    
-    assertEq(pixel8.getPrizePoolPot(), 0.0006 ether, "getPrizePoolPot");
+    assertEq(pixel8.getPrizePoolPot(), expectedPrizePool * 2, "getPrizePoolPot");
   }
 
   function test_GameIsNotOverIfTileRevealThresholdNotYetReached() public {
@@ -33,7 +36,11 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     payable(pixel8_addr).transfer(0.0006 ether);    
 
-    uint expectedPrizePoolPot = 0.0006 ether + 0.015 ether;
+    uint expectedBalance = 0.0006 ether + 0.03 ether + 0.0006 ether;
+    assertEq(address(pixel8_addr).balance, expectedBalance, "balance");
+
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalance * 1000 / totalBips;
 
     assertEq(pixel8.gameOver(), false, "gameOver");
     assertEq(pixel8.getPrizePoolPot(), expectedPrizePoolPot, "prize pool pot still incrementing");
@@ -43,9 +50,12 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_GameIsOverWhenTileRevealThresholdReached() public {
     _mintAndRevealTiles(10);
 
-    payable(pixel8_addr).transfer(0.0006 ether);        
+    payable(pixel8_addr).transfer(0.0006 ether);   // extra since game is already over
 
-    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+    uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
+    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot + 0.0006 ether, "balance");
 
     assertEq(pixel8.gameOver(), true, "gameOver");
     assertEq(pixel8.getPrizePoolPot(), expectedPrizePoolPot, "prize pot unchanged once game over");
@@ -60,7 +70,10 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_WhenGameIsOver_HaveClaimablePrizes() public {
     _mintAndRevealTiles(10);
 
-    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+    uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
+    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
     
     assertEq(pixel8.highestNumForceSwaps(), wallet5);
     assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000, "force swaps");
@@ -79,7 +92,11 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
     _mintAndRevealTiles(10);
 
-    uint expectedPrizePoolPot = 0.0003 ether + 0.015 ether;
+    uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
+    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
+
     uint claimableExpected = expectedPrizePoolPot * 450 / 1000;
 
     assertEq(pixel8.calculatePrize(wallet1), claimableExpected);
@@ -129,7 +146,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.forceSwap{value: 0.01 ether}(5, 2); // force swap 1 tile
     vm.stopPrank();
 
-    // finally do game over
+    // reveal the tiles
     for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
       _pixel8_reveal(wallet1, i, "uri1");
     }

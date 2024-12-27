@@ -49,13 +49,15 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
   /**
-   * @dev Dev royalties info.
+   * @dev Royalties.
    */
-  struct DevRoyalties {
-    /** The receiver of the dev royalties. */
+  struct Royalties {
+    /** The receiver of the royalties. */
     address receiver;
-    /** The trading fee for the dev royalties. */
+    /** The trading fee in bips. */
     uint96 feeBips;
+    /** The final amount of royalties when game is over. */
+    uint amount;
   }
 
   /**
@@ -72,7 +74,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   /**
    * @dev Dev royalties info.
    */
-  DevRoyalties private devRoyalties;
+  Royalties private devRoyalties;
+
+  /**
+   * @dev Creator royalties info.
+   */
+  Royalties private creatorRoyalties;
 
   /**
    * @dev Prize pool info.
@@ -185,6 +192,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     address devRoyaltyReceiver;
     /** Dev royalty fee */
     uint96 devRoyaltyFeeBips;
+    /** Creator royalty receiver */
+    address creatorRoyaltyReceiver;
+    /** Creator royalty fee */
+    uint96 creatorRoyaltyFeeBips;
     /** Default token image as a data URI. */
     string defaultImage;
     /** Prize pool trading fee. */
@@ -214,11 +225,13 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
     devRoyalties.receiver = _config.devRoyaltyReceiver;
     devRoyalties.feeBips = _config.devRoyaltyFeeBips;
+    creatorRoyalties.receiver = _config.creatorRoyaltyReceiver;
+    creatorRoyalties.feeBips = _config.creatorRoyaltyFeeBips;
     forceSwapCost = _config.forceSwapCost;
     forceSwapCooldownPeriod = _config.forceSwapCooldownPeriod;
     externalTradeThreshold = _config.externalTradeThreshold;
 
-    _setDefaultRoyalty(address(this), devRoyalties.feeBips + prizePool.feeBips);
+    _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips + prizePool.feeBips);
   }
 
   // Approvals
@@ -299,8 +312,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   // Functions - getters
 
-  function getDevRoyalties() external view returns (DevRoyalties memory) {
+  function getDevRoyalties() external view returns (Royalties memory) {
     return devRoyalties;
+  }
+
+  function getCreatorRoyalties() external view returns (Royalties memory) {
+    return creatorRoyalties;
   }
 
   function getPrizePool() external view returns (PrizePool memory) {
@@ -488,7 +505,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     if (gameOver) {
       return prizePool.pot;
     } else {
-      (, uint prizePoolPot) = _calculatePots();
+      (, , uint prizePoolPot) = _calculatePots();
       return prizePoolPot;
     }
   }
@@ -499,14 +516,17 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   function _setGameOver() private {
     gameOver = true;
 
-    (uint devRoyaltiesPot, uint prizePoolPot) = _calculatePots();
+    (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) = _calculatePots();
     prizePool.pot = prizePoolPot;
+    devRoyalties.amount = devRoyaltiesPot;
+    creatorRoyalties.amount = creatorRoyaltiesPot;
 
     // update royalty fee to just be the dev fee and also send all money to the dev receiver
     _setDefaultRoyalty(devRoyalties.receiver, devRoyalties.feeBips);
 
-    // withdraw dev royalties so far
+    // withdraw dev and creator royalties so far
     payable(devRoyalties.receiver).transfer(devRoyaltiesPot);
+    payable(creatorRoyalties.receiver).transfer(creatorRoyaltiesPot);
 
     emit GameOver();
   }
@@ -564,10 +584,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   /**
    * @dev Calculate the dev royalties and prize pool pots so far based on the current contract balance.
    */
-  function _calculatePots() private view returns (uint devRoyaltiesPot, uint prizePoolPot) {
-    uint totalBips = devRoyalties.feeBips + prizePool.feeBips;
+  function _calculatePots() private view returns (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) {
+    uint totalBips = devRoyalties.feeBips + creatorRoyalties.feeBips + prizePool.feeBips;
     devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
-    prizePoolPot = address(this).balance - devRoyaltiesPot;
+    creatorRoyaltiesPot = address(this).balance * creatorRoyalties.feeBips / totalBips;
+    prizePoolPot = address(this).balance - devRoyaltiesPot - creatorRoyaltiesPot;
   }
 
   /**
