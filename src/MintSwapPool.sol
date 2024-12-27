@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { IPixel8 } from "./IPixel8.sol";
+import { IMintSwapPool } from "./IMintSwapPool.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "./Common.sol";
@@ -25,7 +26,7 @@ import { IERC721TokenReceiver } from "./ERC721.sol";
  *
  * Mint price follows an exponential bonding curve, meaning price increases by a fixed percentage with each purchase.
  */
-contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
+contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintSwapPool {
   /**
    * @dev Pool status.
    */
@@ -34,16 +35,6 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve {
     PoolCurve curve;
     PoolStatus status;
     uint funds;
-  }
-
-  /**
-   * @dev Configuration parameters for a pool.
-   */
-  struct PoolConfig {
-    /** Pixel8 contract */
-    address nft;
-    /** Price curves (and thus liquidity pools) */
-    PoolCurve curve;
   }
 
   // Mapping from NFT contract address to pool ID

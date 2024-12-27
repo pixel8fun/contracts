@@ -5,12 +5,13 @@ import { console2 as c } from "forge-std/Test.sol";
 import { Auth } from "src/Auth.sol";
 import { TestBase01 } from "test/utils/TestBase01.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
+import { IMintSwapPool } from "src/IMintSwapPool.sol";
 import { Pixel8 } from "src/Pixel8.sol";
 import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 
 abstract contract MintSwapPoolTestBase is TestBase01 {  
-  MintSwapPool.PoolConfig public defaultPoolConfig;
+  IMintSwapPool.PoolConfig public defaultPoolConfig;
   MintSwapPool public pool;
   address payable pool_addr;
 
@@ -32,8 +33,8 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
 
   // Helper methods
 
-  function _getDefaultPoolConfig() internal view returns (MintSwapPool.PoolConfig memory) {
-    return MintSwapPool.PoolConfig({
+  function _getDefaultPoolConfig() internal view returns (IMintSwapPool.PoolConfig memory) {
+    return IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 10,

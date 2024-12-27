@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
+import { IMintSwapPool } from "src/IMintSwapPool.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { MintSwapPoolTestBase } from "./MintSwapPoolTestBase.sol";
 import { PoolCurve, PoolStatus } from "src/Common.sol";
@@ -24,7 +25,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
 
     pool = new MintSwapPool(owner1, owner1);
     vm.prank(owner1);
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
@@ -41,7 +42,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     pool = new MintSwapPool(owner1, owner1);
     vm.prank(owner1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintPrice.selector, price));
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 1,
@@ -58,7 +59,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
 
     pool = new MintSwapPool(owner1, owner1);
     vm.prank(owner1);
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: start,
@@ -74,7 +75,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     vm.startPrank(owner1);
 
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintStartId.selector, 0));
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 0,
@@ -85,7 +86,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     }));
 
     vm.expectRevert(abi.encodeWithSelector(LibErrors.InvalidMintEndId.selector, 1));
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_addr,
       curve: PoolCurve({
         mintStartId: 2,
@@ -120,7 +121,7 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
 
     // Test that new pool creator can create pools
     vm.prank(wallet1);
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: address(0x123),
       curve: PoolCurve({
         mintStartId: 1,

@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { MintSwapPoolTestBase } from "./MintSwapPoolTestBase.sol";
 import { MintSwapPool } from "src/MintSwapPool.sol";
+import { IMintSwapPool } from "src/IMintSwapPool.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { Pixel8 } from "src/Pixel8.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "src/Common.sol";
@@ -35,7 +36,7 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
 
     // create second pool
     vm.prank(owner1);
-    pool.create(MintSwapPool.PoolConfig({
+    pool.create(IMintSwapPool.PoolConfig({
       nft: pixel8_2_addr,
       curve: PoolCurve({
         mintStartId: 10,

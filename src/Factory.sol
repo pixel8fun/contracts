@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import { Pixel8 } from "./Pixel8.sol";
+import { IMintSwapPool } from "./IMintSwapPool.sol";
 import { PoolCurve } from "./Common.sol";
-import { MintSwapPool } from "./MintSwapPool.sol";
 import { Auth } from "./Auth.sol";
 
 /**
@@ -40,7 +40,7 @@ contract Factory is Auth {
         address pixel8 = address(new Pixel8(pixel8Config));
 
         // Create pool for the NFT
-        MintSwapPool(pool).create(MintSwapPool.PoolConfig({
+        IMintSwapPool(pool).create(IMintSwapPool.PoolConfig({
             nft: pixel8,
             curve: poolCurve
         }));
