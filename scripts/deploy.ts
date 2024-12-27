@@ -90,7 +90,7 @@ const deployContract = async (walletClient: any, publicClient: any, account: Acc
 
 const main = async () => {
   const { argv } = yargs(process.argv.slice(2))
-  const { chain: chainId } = argv
+  const { chain: chainId } = argv as unknown as{ chain: string }
   
   if (!chains[chainId]) {
     throw new Error(`Chain not configured: ${chainId}`)
