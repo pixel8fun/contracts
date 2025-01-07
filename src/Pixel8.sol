@@ -293,7 +293,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
         abi.encodePacked(
           '{',
               '"name": "Unrevealed tile",',
-              '"description": "An unrevealed Pixel8 tile - see https://pixel8.art for more info.",',
+              '"description": "An unrevealed Pixel8 tile - https://pixel8.fun",',
               '"image": "', defaultImage, '"',
           '}'
         ) 

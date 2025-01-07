@@ -20,7 +20,7 @@ abstract contract Pixel8TestBase is TestBase01 {
       abi.encodePacked(
         '{',
             '"name": "Unrevealed tile",',
-            '"description": "An unrevealed Pixel8 tile - see https://pixel8.art for more info.",',
+            '"description": "An unrevealed Pixel8 tile - https://pixel8.fun",',
             '"image": "', pixel8.defaultImage(), '"',
         '}'
       ) 
