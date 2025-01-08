@@ -50,6 +50,9 @@ contract FactoryTest is TestBase01 {
         assertEq(newPixel8.owner(), address(factory));
         assertEq(newPixel8.authoriser(), authoriser1);
         assertEq(newPixel8.pool(), address(pool));
+        assertEq(newPixel8.defaultImage(), "img");
+        assertEq(newPixel8.name(), "Pixel8");
+        assertEq(newPixel8.symbol(), "PIXEL8");
         assertEq(pool.poolIds(address(newPixel8)), 1);
         (IPixel8 retNft, PoolCurve memory retCurve, ,) = pool.pools(1);
         assertEq(address(retNft), address(newPixel8));
@@ -132,51 +135,4 @@ contract FactoryTest is TestBase01 {
         );
     }
 
-    function test_createPixel8_NameSymbolAndCounter() public {
-        Pixel8.Config memory config = _getDefaultPixel8Config();
-        PoolCurve memory curve = PoolCurve({
-            mintStartId: 1,
-            mintEndId: 100,
-            startPriceWei: 1 ether,
-            delta: 1.1 ether
-        });
-
-        Auth.Signature memory sig = _computeAuthoriserSig(
-            abi.encode(config, curve),
-            block.timestamp + 1 hours
-        );
-
-        assertEq(factory.totalCreated(), 0);
-
-        address pixel8Address = factory.createPixel8(
-            address(pool),
-            config,
-            curve,
-            sig
-        );
-
-        assertEq(factory.totalCreated(), 1);
-        Pixel8 newPixel8 = Pixel8(payable(pixel8Address));
-        assertEq(newPixel8.name(), "Pixel8_1");
-        assertEq(newPixel8.symbol(), "PIXEL8_1");
-
-        vm.warp(block.timestamp + 1 hours);
-
-        // Create second instance
-        sig = _computeAuthoriserSig(
-            abi.encode(config, curve),
-            block.timestamp + 1 hours
-        );
-        pixel8Address = factory.createPixel8(
-            address(pool),
-            config,
-            curve,
-            sig
-        );
-
-        assertEq(factory.totalCreated(), 2);
-        newPixel8 = Pixel8(payable(pixel8Address));
-        assertEq(newPixel8.name(), "Pixel8_2");
-        assertEq(newPixel8.symbol(), "PIXEL8_2");
-    }
 } 

@@ -46,12 +46,6 @@ contract Factory is Auth {
         // Override owner in config
         pixel8Config.owner = address(this);
 
-        // set name
-        totalCreated++;
-        string memory totalCreatedStr = Strings.toString(totalCreated);
-        pixel8Config.name = string.concat("Pixel8_", totalCreatedStr);
-        pixel8Config.symbol = string.concat("PIXEL8_", totalCreatedStr);
-
         // Deploy new Pixel8 instance
         address pixel8 = address(new Pixel8(pixel8Config));
 
