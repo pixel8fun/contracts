@@ -22,6 +22,13 @@ contract Factory is Auth {
         authoriser = _authoriser;
     }
 
+    function getCreatePixel8SignableData(
+        Pixel8.Config memory pixel8Config,
+        PoolCurve memory poolCurve
+    ) public pure returns (bytes memory) {
+        return abi.encode(pixel8Config, poolCurve);
+    }
+
     function createPixel8(
         address pool,
         Pixel8.Config memory pixel8Config,
@@ -33,7 +40,7 @@ contract Factory is Auth {
             msg.sender,
             authoriser,
             signature,
-            abi.encode(pixel8Config, poolCurve)
+            getCreatePixel8SignableData(pixel8Config, poolCurve)
         );
 
         // Override owner in config

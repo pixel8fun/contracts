@@ -31,7 +31,7 @@ contract FactoryTest is TestBase01 {
         });
 
         Auth.Signature memory sig = _computeAuthoriserSig(
-            abi.encode(config, curve),
+            factory.getCreatePixel8SignableData(config, curve),
             block.timestamp + 1 hours
         );
 
