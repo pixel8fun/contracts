@@ -36,6 +36,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   event PoolSet(address pool);
 
   /**
+   * @dev Emitted when a trade is recorded.
+   */
+  event TradeRecorded(address wallet, uint amount, bool buyOrSell, uint numItems);
+
+  /**
    * @dev Prize pool info.
    */
   struct PrizePool {
@@ -271,11 +276,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
 
-  function recordTrade(address _wallet, uint _amount) external override onlyPool {
+  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external override onlyPool {
     tradingVolume[_wallet] += _amount;
     if (tradingVolume[_wallet] > tradingVolume[highestTradingVolume]) {
       highestTradingVolume = _wallet;
     }
+    emit TradeRecorded(_wallet, _amount, _buyOrSell, _numItems);
   }
 
   // token URI

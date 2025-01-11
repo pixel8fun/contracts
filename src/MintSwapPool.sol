@@ -132,7 +132,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
 
     pool.nft.safeTransferFrom(address(this), sender, _id, "");
 
-    _postBuy(pool, sender, quote);
+    _postBuy(pool, sender, quote, 1);
   }
 
   /**
@@ -159,7 +159,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
       pool.status.lastMintId += numItems;
     }
 
-    _postBuy(pool, sender, quote);
+    _postBuy(pool, sender, quote, numItems);
   }
 
 
@@ -226,8 +226,9 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
    * @dev Post-buy processing.
    * @param sender Buyer.
    * @param quote Buy quote.
+   * @param numItems Number of NFTs bought.
    */
-  function _postBuy(Pool storage pool, address sender, BuyQuote memory quote) internal {
+  function _postBuy(Pool storage pool, address sender, BuyQuote memory quote, uint numItems) internal {
     // add funds to pool
     pool.funds += (quote.inputValue - quote.fee);
     pool.status.priceWei = quote.newSpotPrice;
@@ -241,7 +242,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
     }
 
     // record trade volume
-    pool.nft.recordTrade(sender, quote.inputValue);
+    pool.nft.recordTrade(sender, quote.inputValue, true, numItems);
   }
 
   // ---------------------------------------------------------------
@@ -273,7 +274,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
     payable(quote.feeReceiver).transfer(quote.fee);
 
     // record trade volume
-    pool.nft.recordTrade(sender, quote.outputValue);
+    pool.nft.recordTrade(sender, quote.outputValue, false, tokenIds.length);
   }
 
   /**

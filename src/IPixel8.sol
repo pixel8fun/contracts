@@ -48,6 +48,8 @@ interface IPixel8 is IERC721 {
    *
    * @param _wallet The address of the wallet.
    * @param _amount The amount of trading volume.
+   * @param _buyOrSell Whether the trade is a buy or sell.
+   * @param _numItems The number of items traded.
    */
-  function recordTrade(address _wallet, uint _amount) external;
+  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external;
 }

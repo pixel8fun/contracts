@@ -153,9 +153,9 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     // record trade volume
     vm.startPrank(pool1);
-    pixel8.recordTrade(wallet1, 0.01 ether);
-    pixel8.recordTrade(wallet4, 0.03 ether); // wallet4 is the highest trading volume
-    pixel8.recordTrade(wallet2, 0.02 ether);
+    pixel8.recordTrade(wallet1, 0.01 ether, true, 1);
+    pixel8.recordTrade(wallet4, 0.03 ether, true, 1); // wallet4 is the highest trading volume
+    pixel8.recordTrade(wallet2, 0.02 ether, true, 1);
     vm.stopPrank();
 
     // NOTE: the force-swap payments are included in the prize pool pot + dev royalties
