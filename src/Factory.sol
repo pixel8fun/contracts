@@ -5,7 +5,6 @@ import { Pixel8 } from "./Pixel8.sol";
 import { IMintSwapPool } from "./IMintSwapPool.sol";
 import { PoolCurve } from "./Common.sol";
 import { Auth } from "./Auth.sol";
-import { Strings } from "openzeppelin/utils/Strings.sol";
 
 /**
  * @notice Factory contract for creating Pixel8 instances
@@ -13,27 +12,26 @@ import { Strings } from "openzeppelin/utils/Strings.sol";
 contract Factory is Auth {
     event Pixel8Created(address indexed pixel8);
 
-    uint public totalCreated;
-
     // The authoriser for all Pixel8 instances
     address public immutable authoriser;
+    uint public totalCreated;
 
     constructor(address _authoriser) {
         authoriser = _authoriser;
     }
 
     function getCreatePixel8SignableData(
-        Pixel8.Config memory pixel8Config,
-        PoolCurve memory poolCurve
+        Pixel8.Config calldata pixel8Config,
+        PoolCurve calldata poolCurve
     ) public pure returns (bytes memory) {
         return abi.encode(pixel8Config, poolCurve);
     }
 
     function createPixel8(
         address pool,
-        Pixel8.Config memory pixel8Config,
-        PoolCurve memory poolCurve,
-        Auth.Signature memory signature
+        Pixel8.Config calldata pixel8Config,
+        PoolCurve calldata poolCurve,
+        Auth.Signature calldata signature
     ) external returns (address) {
         // Verify signature from authoriser
         _assertValidSignature(
@@ -43,11 +41,10 @@ contract Factory is Auth {
             getCreatePixel8SignableData(pixel8Config, poolCurve)
         );
 
-        // Override owner in config
-        pixel8Config.owner = address(this);
-
-        // Deploy new Pixel8 instance
-        address pixel8 = address(new Pixel8(pixel8Config));
+        // Deploy new Pixel8 instance with modified config
+        Pixel8.Config memory config = pixel8Config;
+        config.owner = address(this);
+        address pixel8 = address(new Pixel8(config));
 
         // Create pool for the NFT
         IMintSwapPool(pool).create(IMintSwapPool.PoolConfig({
@@ -57,6 +54,7 @@ contract Factory is Auth {
 
         // Set pool on NFT
         Pixel8(payable(pixel8)).setPool(pool);
+        unchecked { ++totalCreated; }
 
         emit Pixel8Created(pixel8);
         return pixel8;

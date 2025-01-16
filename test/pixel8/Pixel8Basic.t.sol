@@ -28,6 +28,11 @@ contract Pixel8Basic is Pixel8TestBase {
 
     Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyalties();
     assertEq(creatorRoyalties.amount, 0, "creatorRoyalties.amount should start at 0");
+
+    Pixel8.TileState memory tileState = pixel8.getTileState(1);
+    assertEq(tileState.revealed, false, "Tile should not be revealed initially");
+    assertEq(tileState.imageUri, pixel8.defaultImage(), "Tile should have default image initially");
+    assertEq(tileState.lastCooldownStartTime, 0, "Tile should have no cooldown start time initially");
   }
 
   function test_SetPoolOnlyOnce() public {

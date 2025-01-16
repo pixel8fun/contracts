@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.24;
 
+import { Pixel8 } from "../../src/Pixel8.sol";
 import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
@@ -60,6 +61,13 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
     // Check lastCooldownStartTime is updated when transferred from pool
     assertEq(pixel8.lastCooldownStartTime(1), currentTime);
     assertEq(pixel8.lastCooldownStartTime(2), currentTime);
+
+    // Check getTileState returns correct cooldown start time
+    Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
+    assertEq(tileState1.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 1");
+
+    Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
+    assertEq(tileState2.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 2");
   }
 
   function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastCooldownStartTime() public {
@@ -73,6 +81,13 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
     // Check lastCooldownStartTime remains unchanged
     assertEq(pixel8.lastCooldownStartTime(1), initialTime);
     assertEq(pixel8.lastCooldownStartTime(2), initialTime);
+
+    // Check getTileState returns correct cooldown start time
+    Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
+    assertEq(tileState1.lastCooldownStartTime, initialTime, "Incorrect last cooldown start time for token 1");
+
+    Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
+    assertEq(tileState2.lastCooldownStartTime, initialTime, "Incorrect last cooldown start time for token 2");
   }
 
   function test_Pixel8BatchTransferIdsIfNotAuthorised_Fails() public {

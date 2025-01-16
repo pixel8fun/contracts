@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { Pixel8TestBase } from "./Pixel8TestBase.sol";
+import { Pixel8 } from "../../src/Pixel8.sol";
 import { GoodERC721Receiver } from "../utils/TestBase01.sol";
 import { Auth } from "src/Auth.sol";
 import { LibErrors } from "src/LibErrors.sol";
@@ -35,6 +36,12 @@ contract Pixel8MintingByPool is Pixel8TestBase {
     // Check lastCooldownStartTime is set correctly
     assertEq(pixel8.lastCooldownStartTime(1), currentTime);
     assertEq(pixel8.lastCooldownStartTime(2), currentTime);
+
+    Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
+    assertEq(tileState1.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 1");
+
+    Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
+    assertEq(tileState2.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 2");
   }
 
   function test_MintByPool_InvokesReceiver() public {

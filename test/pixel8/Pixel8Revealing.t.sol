@@ -149,4 +149,19 @@ contract Pixel8Revealing is Pixel8TestBase {
     vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721TokenNotMinted.selector, 4));
     _pixel8_reveal(wallet1, 4, "uri1");    
   }
+
+  function test_GetTileState_BeforeReveal() public {
+    Pixel8.TileState memory state = pixel8.getTileState(1);
+    assertEq(state.revealed, false, "Tile should not be revealed initially");
+    assertEq(state.imageUri, pixel8.defaultImage(), "Tile should have default image initially");
+  }
+
+  function test_GetTileState_AfterReveal() public {
+    vm.prank(wallet1);
+    _pixel8_reveal(wallet1, 1, "uri1");
+
+    Pixel8.TileState memory state = pixel8.getTileState(1);
+    assertEq(state.revealed, true, "Tile should be revealed");
+    assertEq(state.imageUri, "uri1", "Tile should have updated image URI");
+  }
 }

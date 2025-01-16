@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import { console2 as c } from "forge-std/console2.sol";
 import { Vm } from "forge-std/Vm.sol";
+import { Pixel8 } from "../../src/Pixel8.sol";
 import { Pixel8TestBase } from "./Pixel8TestBase.sol";
 import { LibErrors } from "../../src/LibErrors.sol";
 
@@ -140,6 +141,13 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.lastCooldownStartTime(ALICE_TOKEN), block.timestamp);
         assertEq(pixel8.lastCooldownStartTime(BOB_TOKEN), block.timestamp);
 
+        // Verify getTileState() returns correct cooldown start time
+        Pixel8.TileState memory tileStateAlice = pixel8.getTileState(ALICE_TOKEN);
+        assertEq(tileStateAlice.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for ALICE_TOKEN");
+
+        Pixel8.TileState memory tileStateBob = pixel8.getTileState(BOB_TOKEN);
+        assertEq(tileStateBob.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for BOB_TOKEN");
+
         // Fast forward 30 minutes
         vm.warp(block.timestamp + pixel8.getForceSwapConfig().cooldownPeriod / 2);
 
@@ -158,6 +166,13 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Check cooldown times were reset again
         assertEq(pixel8.lastCooldownStartTime(ALICE_TOKEN), block.timestamp);
         assertEq(pixel8.lastCooldownStartTime(BOB_TOKEN), block.timestamp);
+
+        // Verify getTileState() returns correct cooldown start time after final swap
+        Pixel8.TileState memory finalTileStateAlice = pixel8.getTileState(ALICE_TOKEN);
+        assertEq(finalTileStateAlice.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for ALICE_TOKEN after final swap");
+
+        Pixel8.TileState memory finalTileStateBob = pixel8.getTileState(BOB_TOKEN);
+        assertEq(finalTileStateBob.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for BOB_TOKEN after final swap");
     }
 
     function test_ForceSwap_CannotSwapOwnTokenDuringCooldown() public {

@@ -185,6 +185,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    */
   uint public externalTradeThreshold;
 
+  struct TileState {
+    bool revealed;
+    string imageUri;
+    uint256 lastCooldownStartTime;
+  }
+
   // Constructor
 
   struct Config {
@@ -325,6 +331,14 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   function getForceSwapConfig() external view returns (ForceSwap memory) {
     return forceSwapConfig;
+  }
+
+  function getTileState(uint256 tokenId) external view returns (TileState memory) {
+    return TileState({
+        revealed: revealed[tokenId],
+        imageUri: revealed[tokenId] ? tokenMetadata[tokenId] : defaultImage,
+        lastCooldownStartTime: lastCooldownStartTime[tokenId]
+    });
   }
 
   // Functions - reveal token
