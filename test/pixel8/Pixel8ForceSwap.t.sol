@@ -144,9 +144,11 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Verify getTileState() returns correct cooldown start time
         Pixel8.TileState memory tileStateAlice = pixel8.getTileState(ALICE_TOKEN);
         assertEq(tileStateAlice.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for ALICE_TOKEN");
+        assertEq(tileStateAlice.owner, bob, "ALICE_TOKEN should be owned by bob after swap");
 
         Pixel8.TileState memory tileStateBob = pixel8.getTileState(BOB_TOKEN);
         assertEq(tileStateBob.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for BOB_TOKEN");
+        assertEq(tileStateBob.owner, alice, "BOB_TOKEN should be owned by alice after swap");
 
         // Fast forward 30 minutes
         vm.warp(block.timestamp + pixel8.getForceSwapConfig().cooldownPeriod / 2);
@@ -170,9 +172,11 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Verify getTileState() returns correct cooldown start time after final swap
         Pixel8.TileState memory finalTileStateAlice = pixel8.getTileState(ALICE_TOKEN);
         assertEq(finalTileStateAlice.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for ALICE_TOKEN after final swap");
+        assertEq(finalTileStateAlice.owner, alice, "ALICE_TOKEN should be owned by alice after final swap");
 
         Pixel8.TileState memory finalTileStateBob = pixel8.getTileState(BOB_TOKEN);
         assertEq(finalTileStateBob.lastCooldownStartTime, block.timestamp, "Incorrect last cooldown start time for BOB_TOKEN after final swap");
+        assertEq(finalTileStateBob.owner, bob, "BOB_TOKEN should be owned by bob after final swap");
     }
 
     function test_ForceSwap_CannotSwapOwnTokenDuringCooldown() public {

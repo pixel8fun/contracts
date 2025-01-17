@@ -65,9 +65,11 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
     // Check getTileState returns correct cooldown start time
     Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
     assertEq(tileState1.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 1");
+    assertEq(tileState1.owner, wallet2, "Token 1 should be owned by wallet2");
 
     Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
     assertEq(tileState2.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 2");
+    assertEq(tileState2.owner, wallet2, "Token 2 should be owned by wallet2");
   }
 
   function test_Pixel8BatchTransferIds_NotFromPool_DoesNotUpdateLastCooldownStartTime() public {
@@ -85,9 +87,11 @@ contract Pixel8BatchTransferIds is Pixel8TestBase {
     // Check getTileState returns correct cooldown start time
     Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
     assertEq(tileState1.lastCooldownStartTime, initialTime, "Incorrect last cooldown start time for token 1");
+    assertEq(tileState1.owner, wallet2, "Token 1 should be owned by wallet2");
 
     Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
     assertEq(tileState2.lastCooldownStartTime, initialTime, "Incorrect last cooldown start time for token 2");
+    assertEq(tileState2.owner, wallet2, "Token 2 should be owned by wallet2");
   }
 
   function test_Pixel8BatchTransferIdsIfNotAuthorised_Fails() public {

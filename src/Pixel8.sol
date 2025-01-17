@@ -189,6 +189,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     bool revealed;
     string imageUri;
     uint256 lastCooldownStartTime;
+    address owner;
   }
 
   // Constructor
@@ -337,7 +338,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     return TileState({
         revealed: revealed[tokenId],
         imageUri: revealed[tokenId] ? tokenMetadata[tokenId] : defaultImage,
-        lastCooldownStartTime: lastCooldownStartTime[tokenId]
+        lastCooldownStartTime: lastCooldownStartTime[tokenId],
+        owner: _ownerOf[tokenId]
     });
   }
 

@@ -33,6 +33,7 @@ contract Pixel8Basic is Pixel8TestBase {
     assertEq(tileState.revealed, false, "Tile should not be revealed initially");
     assertEq(tileState.imageUri, pixel8.defaultImage(), "Tile should have default image initially");
     assertEq(tileState.lastCooldownStartTime, 0, "Tile should have no cooldown start time initially");
+    assertEq(tileState.owner, address(0), "Tile should have no owner initially");
   }
 
   function test_SetPoolOnlyOnce() public {

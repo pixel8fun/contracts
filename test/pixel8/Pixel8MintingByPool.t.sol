@@ -39,9 +39,11 @@ contract Pixel8MintingByPool is Pixel8TestBase {
 
     Pixel8.TileState memory tileState1 = pixel8.getTileState(1);
     assertEq(tileState1.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 1");
+    assertEq(tileState1.owner, wallet1, "Token 1 should be owned by wallet1");
 
     Pixel8.TileState memory tileState2 = pixel8.getTileState(2);
     assertEq(tileState2.lastCooldownStartTime, currentTime, "Incorrect last cooldown start time for token 2");
+    assertEq(tileState2.owner, wallet1, "Token 2 should be owned by wallet1");
   }
 
   function test_MintByPool_InvokesReceiver() public {

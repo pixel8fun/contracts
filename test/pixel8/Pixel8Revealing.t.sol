@@ -154,6 +154,7 @@ contract Pixel8Revealing is Pixel8TestBase {
     Pixel8.TileState memory state = pixel8.getTileState(1);
     assertEq(state.revealed, false, "Tile should not be revealed initially");
     assertEq(state.imageUri, pixel8.defaultImage(), "Tile should have default image initially");
+    assertEq(state.owner, wallet1, "Tile should be owned by wallet1");
   }
 
   function test_GetTileState_AfterReveal() public {
@@ -163,5 +164,6 @@ contract Pixel8Revealing is Pixel8TestBase {
     Pixel8.TileState memory state = pixel8.getTileState(1);
     assertEq(state.revealed, true, "Tile should be revealed");
     assertEq(state.imageUri, "uri1", "Tile should have updated image URI");
+    assertEq(state.owner, wallet1, "Tile should still be owned by wallet1");
   }
 }
