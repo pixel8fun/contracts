@@ -389,17 +389,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   // Functions - set default image
 
-  /**
-   * @dev Set the default token image.
-   * @param _defaultImage The new default image.
-   */
-  function setDefaultImage(string calldata _defaultImage) external onlyOwner {
-    defaultImage = _defaultImage;
-    
-    // IERC4906
-    emit BatchMetadataUpdate(1, totalSupply);
-  }
-
   // Authoriser
 
   /**
