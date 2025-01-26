@@ -68,7 +68,7 @@ abstract contract TestBase01 is Test {
         cost: 0.01 ether,
         cooldownPeriod: 1 hours
       }),
-      externalTradeThreshold: 1
+      externalTradeThreshold: 10
     });
   }
 

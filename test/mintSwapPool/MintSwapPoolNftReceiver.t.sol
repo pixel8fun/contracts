@@ -8,6 +8,9 @@ import { PoolCurve, PoolStatus } from "src/Common.sol";
 
 contract MintSwapPoolNftReceiver is MintSwapPoolTestBase {
   function setUp() virtual public override {
+    defaultPixel8Config = _getDefaultPixel8Config();
+    defaultPixel8Config.externalTradeThreshold = 1;
+    
     defaultPoolConfig = _getDefaultPoolConfig();
     defaultPoolConfig.curve.mintStartId = 1;
     defaultPoolConfig.curve.mintEndId = 65535;

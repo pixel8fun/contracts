@@ -10,6 +10,9 @@ import { IERC721Errors } from "src/IERC721Errors.sol";
 
 contract Pixel8BatchTransferIds is Pixel8TestBase {
   function setUp() public override {
+    defaultPixel8Config = _getDefaultPixel8Config();
+    defaultPixel8Config.externalTradeThreshold = 1;
+    
     super.setUp();
 
     vm.prank(owner1);

@@ -245,15 +245,15 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @dev See {IERC721-isApprovedForAll}.
    */
   function isApprovedForAll(address owner, address spender) public view override(ERC721, IERC721) returns (bool) {
-    return (spender == pool || ERC721.isApprovedForAll(owner, spender));
+    return (spender == address(this) || spender == pool || ERC721.isApprovedForAll(owner, spender));
   }
 
   /**
-   * @dev Override to restrict transfers to pool only until external trade threshold is met
+   * @dev Override to restrict transfers to pool and this contract only until external trade threshold is met
    */
   function _isAuthorized(address caller, address from, uint256 id) internal view virtual override returns (bool) {
     if (totalSupply < externalTradeThreshold) {
-      return caller == pool;
+      return caller == pool || caller == address(this);
     }
     return super._isAuthorized(caller, from, id);
   }
@@ -485,8 +485,8 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
 
     // Perform the swap
-    _transfer(from, from, toOwner, fromTokenId);
-    _transfer(toOwner, toOwner, from, toTokenId);
+    _transfer(address(this), from, toOwner, fromTokenId);
+    _transfer(address(this), toOwner, from, toTokenId);
 
     // Reset cooldown times for both tokens
     lastCooldownStartTime[fromTokenId] = block.timestamp;
