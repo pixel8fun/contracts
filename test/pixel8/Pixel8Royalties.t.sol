@@ -40,7 +40,10 @@ contract Pixel8Royalties is Pixel8TestBase {
     uint expectedCreatorRoyalties = 1 ether * 500 / totalBips; // 0.2 ether
     uint expectedPrizePool = 1 ether * 1000 / totalBips; // 0.4 ether
 
-    assertEq(pixel8.getPrizePoolPot(), expectedPrizePool, "prize pool pot");
+    Pixel8.PrizesRoyaltiesWinners memory winners = pixel8.getPrizesRoyaltiesWinners();
+    assertEq(winners.prizePoolPot, expectedPrizePool, "prize pool pot");
+    assertEq(winners.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
+    assertEq(winners.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
   }
 
   function test_RoyaltyDistributionAfterGameOver() public {
@@ -58,14 +61,17 @@ contract Pixel8Royalties is Pixel8TestBase {
 
     assertEq(owner1.balance - balanceBeforeDev, expectedDevRoyalties, "dev royalties paid");
     assertEq(creator1.balance - balanceBeforeCreator, expectedCreatorRoyalties, "creator royalties paid");
-    assertEq(pixel8.getPrizePoolPot(), expectedPrizePool, "prize pool pot");
+    Pixel8.PrizesRoyaltiesWinners memory winners = pixel8.getPrizesRoyaltiesWinners();
+    assertEq(winners.prizePoolPot, expectedPrizePool, "prize pool pot");
+    assertEq(winners.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
+    assertEq(winners.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
 
     // Check final royalty amounts are recorded
-    Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyalties();
-    assertEq(devRoyalties.amount, expectedDevRoyalties, "dev royalties amount recorded");
+    Pixel8.Royalties memory devRoyaltiesRecord = pixel8.getDevRoyalties();
+    assertEq(devRoyaltiesRecord.amount, expectedDevRoyalties, "dev royalties amount recorded");
 
-    Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyalties();
-    assertEq(creatorRoyalties.amount, expectedCreatorRoyalties, "creator royalties amount recorded");
+    Pixel8.Royalties memory creatorRoyaltiesRecord = pixel8.getCreatorRoyalties();
+    assertEq(creatorRoyaltiesRecord.amount, expectedCreatorRoyalties, "creator royalties amount recorded");
 
     // After game over, royalties should only go to dev
     (address receiver, uint256 feeBips) = pixel8.getRoyaltyInfo();

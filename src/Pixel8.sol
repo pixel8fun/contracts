@@ -501,20 +501,40 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     emit ForceSwapped(fromTokenId, toTokenId);
   }
 
-  // prize pool
+  // other
+
+  struct PrizesRoyaltiesWinners {
+    uint prizePoolPot;
+    uint devRoyaltiesPot;
+    uint creatorRoyaltiesPot;
+    address highestNumForceSwaps;
+    address highestTradingVolume;
+    address[3] highestPoints;
+  }
 
   /**
-   * @dev Get the prize pool total pot.
-   *
-   * If the prize pool isn't ready yet, this will calculate the potential pot. 
-   * If the prize pool is ready, this will return the actual pot.
+   * @dev Get the prizes, royalties and winners.
    */
-  function getPrizePoolPot() external view returns (uint) {
+  function getPrizesRoyaltiesWinners() external view returns (PrizesRoyaltiesWinners memory) {
     if (gameOver) {
-      return prizePool.pot;
+      return PrizesRoyaltiesWinners({
+        prizePoolPot: prizePool.pot,
+        devRoyaltiesPot: devRoyalties.amount,
+        creatorRoyaltiesPot: creatorRoyalties.amount,
+        highestNumForceSwaps: highestNumForceSwaps,
+        highestTradingVolume: highestTradingVolume,
+        highestPoints: highestPoints
+      });
     } else {
-      (, , uint prizePoolPot) = _calculatePots();
-      return prizePoolPot;
+      (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) = _calculatePots();
+      return PrizesRoyaltiesWinners({
+        prizePoolPot: prizePoolPot,
+        devRoyaltiesPot: devRoyaltiesPot,
+        creatorRoyaltiesPot: creatorRoyaltiesPot,
+        highestNumForceSwaps: highestNumForceSwaps,
+        highestTradingVolume: highestTradingVolume,
+        highestPoints: highestPoints
+      });
     }
   }
 

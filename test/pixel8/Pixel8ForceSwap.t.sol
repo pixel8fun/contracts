@@ -48,6 +48,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
         assertEq(pixel8.numForceSwaps(alice), 1);
         assertEq(pixel8.highestNumForceSwaps(), alice);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, alice);
     }
 
     function test_ForceSwap_RevertWhenInsufficientPayment() public {
@@ -114,6 +115,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, BOB_TOKEN);
         assertEq(pixel8.highestNumForceSwaps(), alice);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, alice);
 
         // Fast forward 1 hour to bypass cooldown
         vm.warp(block.timestamp + pixel8.getForceSwapConfig().cooldownPeriod);
@@ -130,6 +132,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
         assertEq(pixel8.numForceSwaps(bob), 2);
         assertEq(pixel8.highestNumForceSwaps(), bob);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, bob);
     }
 
     function test_ForceSwap_CooldownResetAfterSwap() public {
@@ -213,16 +216,17 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     }
 
     function test_ForceSwap_FeeAddedToPrizePool() public {
-        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
         
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, BOB_TOKEN);
 
-        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.01 ether));
+        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.01 ether));
     }
 
     function test_ForceSwap_MultipleFeesCumulative() public {
-        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
         
         // First swap
         vm.prank(alice);
@@ -235,16 +239,18 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.prank(bob);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, EVE_TOKEN);
 
-        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.02 ether));
+        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.02 ether));
     }
 
     function test_ForceSwap_ExcessFeeAddedToPrizePool() public {
-        uint256 initialPrizePool = pixel8.getPrizePoolPot();
+        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
         
         vm.prank(alice);
         pixel8.forceSwap{value: 0.015 ether}(ALICE_TOKEN, BOB_TOKEN);
 
-        assertEq(pixel8.getPrizePoolPot(), initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.015 ether));
+        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.015 ether));
     }
 
     function test_ForceSwap_RevertWhenGameOver() public {
