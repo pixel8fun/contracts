@@ -47,7 +47,38 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(pixel8.gameOver(), false, "gameOver");
     uint pot = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
     assertEq(pot, expectedPrizePoolPot, "prize pool pot still incrementing");
-    assertEq(pixel8.calculatePrize(wallet1), 0, "no prize claimable yet");
+    assertEq(pixel8.calculatePrize(wallet1), 0, "no prize claimable yet");    
+  }
+
+  function test_GetWinners_BeforeGameOver() public {
+    _mintAndRevealTiles(9);
+
+    uint expectedBalance = 0.0006 ether + 0.03 ether;
+    assertEq(address(pixel8_addr).balance, expectedBalance, "balance");
+
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalance * 1000 / totalBips;
+
+    assertEq(pixel8.gameOver(), false, "gameOver");
+
+    assertEq(pixel8.highestNumForceSwaps(), wallet5);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet5);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 2, "force swaps");
+
+    assertEq(pixel8.highestTradingVolume(), wallet4); 
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet4);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
+
+    assertEq(pixel8.highestPoints(0), wallet1);
+    assertEq(pixel8.highestPoints(1), wallet2);
+    assertEq(pixel8.highestPoints(2), wallet3);
+
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 200, "1st points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], wallet2); 
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 150, "2nd points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], wallet3);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 100, "3rd points");
   }
 
   function test_GameIsOverWhenTileRevealThresholdReached() public {
@@ -80,24 +111,29 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
     
     assertEq(pixel8.highestNumForceSwaps(), wallet5);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, wallet5);
-    assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000, "force swaps");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet5);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 2, "force swaps");
+    assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000);
 
     assertEq(pixel8.highestTradingVolume(), wallet4); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestTradingVolume, wallet4);
-    assertEq(pixel8.calculatePrize(wallet4), expectedPrizePoolPot * 100 / 1000, "trading volume");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet4);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
+    assertEq(pixel8.calculatePrize(wallet4), expectedPrizePoolPot * 100 / 1000);
 
     assertEq(pixel8.highestPoints(0), wallet1);
     assertEq(pixel8.highestPoints(1), wallet2);
     assertEq(pixel8.highestPoints(2), wallet3);
 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestPoints[0], wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestPoints[1], wallet2); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestPoints[2], wallet3);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 250, "1st points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], wallet2); 
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 150, "2nd points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], wallet3);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 100, "3rd points");
         
-    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * 450 / 1000, "1st points");
-    assertEq(pixel8.calculatePrize(wallet2), expectedPrizePoolPot * 250 / 1000, "2nd points");
-    assertEq(pixel8.calculatePrize(wallet3), expectedPrizePoolPot * 100 / 1000, "3rd points");
+    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * 450 / 1000);
+    assertEq(pixel8.calculatePrize(wallet2), expectedPrizePoolPot * 250 / 1000);
+    assertEq(pixel8.calculatePrize(wallet3), expectedPrizePoolPot * 100 / 1000);
   }
 
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {

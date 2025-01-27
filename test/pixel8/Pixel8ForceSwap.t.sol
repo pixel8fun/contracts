@@ -48,7 +48,8 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
         assertEq(pixel8.numForceSwaps(alice), 1);
         assertEq(pixel8.highestNumForceSwaps(), alice);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, alice);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, alice);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 1);
     }
 
     function test_ForceSwap_RevertWhenInsufficientPayment() public {
@@ -115,7 +116,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, BOB_TOKEN);
         assertEq(pixel8.highestNumForceSwaps(), alice);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, alice);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, alice);
 
         // Fast forward 1 hour to bypass cooldown
         vm.warp(block.timestamp + pixel8.getForceSwapConfig().cooldownPeriod);
@@ -132,7 +133,7 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
         assertEq(pixel8.numForceSwaps(bob), 2);
         assertEq(pixel8.highestNumForceSwaps(), bob);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().highestNumForceSwaps, bob);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, bob);
     }
 
     function test_ForceSwap_CooldownResetAfterSwap() public {

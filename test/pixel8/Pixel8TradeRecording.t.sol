@@ -42,12 +42,18 @@ contract Pixel8TradeRecordingTest is Pixel8TestBase {
         
         pixel8.recordTrade(wallet1, 1 ether, true, 1);
         assertEq(pixel8.tradingVolume(wallet1), 1 ether);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 1 ether);
         
         pixel8.recordTrade(wallet1, 2 ether, false, 1);
         assertEq(pixel8.tradingVolume(wallet1), 3 ether);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 3 ether);
         
         pixel8.recordTrade(wallet1, 3 ether, true, 1);
         assertEq(pixel8.tradingVolume(wallet1), 6 ether);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 6 ether);
         
         vm.stopPrank();
     }

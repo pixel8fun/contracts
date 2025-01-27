@@ -507,35 +507,46 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     uint prizePoolPot;
     uint devRoyaltiesPot;
     uint creatorRoyaltiesPot;
-    address highestNumForceSwaps;
-    address highestTradingVolume;
-    address[3] highestPoints;
+    address biggestThief;
+    uint biggestThiefPoints;
+    address biggestTrader;
+    uint biggestTraderVolume;
+    address[3] highestScorers;
+    uint[3] highestScores;
   }
 
   /**
    * @dev Get the prizes, royalties and winners.
    */
   function getPrizesRoyaltiesWinners() external view returns (PrizesRoyaltiesWinners memory) {
-    if (gameOver) {
-      return PrizesRoyaltiesWinners({
-        prizePoolPot: prizePool.pot,
-        devRoyaltiesPot: devRoyalties.amount,
-        creatorRoyaltiesPot: creatorRoyalties.amount,
-        highestNumForceSwaps: highestNumForceSwaps,
-        highestTradingVolume: highestTradingVolume,
-        highestPoints: highestPoints
-      });
-    } else {
-      (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) = _calculatePots();
-      return PrizesRoyaltiesWinners({
-        prizePoolPot: prizePoolPot,
-        devRoyaltiesPot: devRoyaltiesPot,
-        creatorRoyaltiesPot: creatorRoyaltiesPot,
-        highestNumForceSwaps: highestNumForceSwaps,
-        highestTradingVolume: highestTradingVolume,
-        highestPoints: highestPoints
-      });
+    uint[3] memory highestScores;
+    for (uint i = 0; i < 3; i++) {
+      highestScores[i] = points[highestPoints[i]];
     }
+
+    uint devRoyaltiesPot = 0;
+    uint creatorRoyaltiesPot = 0;
+    uint prizePoolPot = 0;
+    
+    if (gameOver) {
+      prizePoolPot = prizePool.pot;
+      devRoyaltiesPot = devRoyalties.amount;
+      creatorRoyaltiesPot = creatorRoyalties.amount;
+    } else {
+      (devRoyaltiesPot, creatorRoyaltiesPot, prizePoolPot) = _calculatePots();
+    }
+
+    return PrizesRoyaltiesWinners({
+      prizePoolPot: prizePoolPot,
+      devRoyaltiesPot: devRoyaltiesPot,
+      creatorRoyaltiesPot: creatorRoyaltiesPot,
+      biggestThief: highestNumForceSwaps,
+      biggestThiefPoints: numForceSwaps[highestNumForceSwaps],
+      biggestTrader: highestTradingVolume,
+      biggestTraderVolume: tradingVolume[highestTradingVolume],
+      highestScorers: highestPoints,
+      highestScores: highestScores
+    });
   }
 
   /**
