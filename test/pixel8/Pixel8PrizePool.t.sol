@@ -136,6 +136,35 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(pixel8.calculatePrize(wallet3), expectedPrizePoolPot * 100 / 1000);
   }
 
+  function test_WhenGameIsOver_Wallet1WinsAll_HaveClaimablePrizes() public {
+    _mintAndRevealTilesWallet1WinsAll();
+
+    uint expectedBalancePriorToGameOver = 0.0006 ether + 0.01 ether;
+    uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
+    uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
+    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
+    
+    assertEq(pixel8.highestPoints(0), wallet1);
+    assertEq(pixel8.highestPoints(1), address(0));
+    assertEq(pixel8.highestPoints(2), address(0));
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 500, "1st points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], address(0)); 
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 0, "2nd points");
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], address(0));
+    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 0, "3rd points");
+
+    assertEq(pixel8.highestNumForceSwaps(), wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 1, "force swaps");
+
+    assertEq(pixel8.highestTradingVolume(), wallet1); 
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
+
+    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * (450 + 100 + 100) / 1000);
+  }
+
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
     _mintAndRevealTiles(10);
 
@@ -206,5 +235,27 @@ contract Pixel8PrizePool is Pixel8TestBase {
     vm.stopPrank();
 
     // NOTE: the force-swap payments are included in the prize pool pot + dev royalties
+  }
+
+  function _mintAndRevealTilesWallet1WinsAll() internal {
+    vm.startPrank(pool1);
+    pixel8.batchMint(wallet1, 1, 9);
+    pixel8.batchMint(wallet2, 10, 10);
+    vm.stopPrank();
+
+    for (uint i = 1; i <= 9; i++) {
+      _pixel8_reveal(wallet1, i, "uri1");
+    }
+
+    // force swaps
+    vm.deal(wallet1, 0.01 ether);
+    vm.prank(wallet1);
+    pixel8.forceSwap{value: 0.01 ether}(1, 10);
+
+    _pixel8_reveal(wallet1, 10, "uri1");
+
+    // trade volume
+    vm.prank(pool1);
+    pixel8.recordTrade(wallet1, 0.03 ether, true, 1);
   }
 }

@@ -579,28 +579,30 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     if (!gameOver) {
       return 0;
     }
+    
+    uint prize = 0;
 
     if (highestNumForceSwaps == _wallet) {
-      return prizePool.pot * 100 / 1000; // 10%
+      prize += prizePool.pot * 100 / 1000; // 10%
     }
     
     if (highestTradingVolume == _wallet) {
-      return prizePool.pot * 100 / 1000; // 10%
+      prize += prizePool.pot * 100 / 1000; // 10%
     }
 
     for (uint i = 0; i < highestPoints.length; i++) {
       if (highestPoints[i] == _wallet) {
         if (i == 0) {
-          return prizePool.pot * 450 / 1000; // 45%
+          prize += prizePool.pot * 450 / 1000; // 45%
         } else if (i == 1) {
-          return prizePool.pot * 250 / 1000; // 25%
+          prize += prizePool.pot * 250 / 1000; // 25%
         } else if (i == 2) {
-          return prizePool.pot * 100 / 1000; // 10%
+          prize += prizePool.pot * 100 / 1000; // 10%
         }
       }
     }
 
-    return 0;
+    return prize;
   }
 
 
