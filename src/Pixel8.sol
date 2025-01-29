@@ -283,12 +283,16 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
 
-  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external override onlyPool {
-    tradingVolume[_wallet] += _amount;
-    if (tradingVolume[_wallet] > tradingVolume[highestTradingVolume]) {
-      highestTradingVolume = _wallet;
+  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external override onlyPool {    
+    if (!gameOver) {
+      tradingVolume[_wallet] += _amount;
+
+      if (tradingVolume[_wallet] > tradingVolume[highestTradingVolume]) {
+        highestTradingVolume = _wallet;
+      }
+
+      emit TradeRecorded(_wallet, _amount, _buyOrSell, _numItems);
     }
-    emit TradeRecorded(_wallet, _amount, _buyOrSell, _numItems);
   }
 
   // token URI
@@ -355,25 +359,26 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
     _requireOwned(_params.tokenId);
 
-    _reveal(_params.tokenId, _params.uri);
-
-    _addPlayerPoints(_params.wallet, _params.points);
+    _reveal(_params);
   }
 
   /**
    * @dev Helper method for revealing a token.
    *
-   * @param _id The token id.
-   * @param _uri The token URI to set.
+   * @param _params The reveal parameters.
    */
-  function _reveal(uint256 _id, string memory _uri) private {
-    if (revealed[_id]) {
-      revert LibErrors.AlreadyRevealed(_id);
+  function _reveal(MintRevealParams memory _params) private {
+    if (revealed[_params.tokenId]) {
+      revert LibErrors.AlreadyRevealed(_params.tokenId);
     }
 
-    _setTokenMetadata(_id, _uri);
+    _setTokenMetadata(_params.tokenId, _params.uri);
 
-    revealed[_id] = true;
+    revealed[_params.tokenId] = true;
+
+    if (!gameOver) {  
+      _addPlayerPoints(_params.wallet, _params.points);
+    }
 
     numRevealed++;
     if (numRevealed >= gameOverRevealThreshold) {

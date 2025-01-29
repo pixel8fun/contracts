@@ -104,6 +104,15 @@ abstract contract TestBase01 is Test {
     pixel8.reveal(params);
   }
 
+  function _pixel8_mint_and_reveal(address _wallet, uint _startId, uint _numTiles) internal {
+    vm.prank(pixel8.pool());
+    pixel8.batchMint(_wallet, _startId, _numTiles);
+
+    for (uint i = _startId; i < _startId + _numTiles; i++) {
+      _pixel8_reveal(_wallet, i, "uri");
+    }
+  }
+
   function _toBytes32(address _addr) internal pure returns (bytes32) {
     return bytes32(uint256(uint160(_addr)));
   }

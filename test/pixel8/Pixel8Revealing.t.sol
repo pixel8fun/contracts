@@ -82,6 +82,24 @@ contract Pixel8Revealing is Pixel8TestBase {
     assertEq(pixel8.points(wallet2), 100);
   }
 
+  function test_RevealWithAuthorisation_AwardsPoints_WhenGameOver_ButDoesNotUpdateHighestScorers() public {
+    Pixel8.Config memory config = _getDefaultPixel8Config();
+    config.gameOverRevealThreshold = 1;
+    pixel8 = new Pixel8(config);
+
+    _pixel8_mint_and_reveal(wallet1, 1, 1);
+
+    assertEq(pixel8.highestPoints(0), wallet1);
+    assertEq(pixel8.gameOver(), true);
+
+    _pixel8_mint_and_reveal(wallet2, 2, 2);
+
+    assertEq(pixel8.highestPoints(0), wallet1);
+
+    assertEq(pixel8.points(wallet1), 50);
+    assertEq(pixel8.points(wallet2), 0); // no points awarded because game is over
+  }
+
   function test_RevealWithNotAuthorisation_Fails() public {
     vm.prank(wallet1);
     vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, wallet1));

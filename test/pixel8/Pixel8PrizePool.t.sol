@@ -36,6 +36,8 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_GameIsNotOverIfTileRevealThresholdNotYetReached() public {
     _mintAndRevealTiles(9);
 
+    assertEq(pixel8.gameOver(), false, "game not over");
+
     payable(pixel8_addr).transfer(0.0006 ether);    
 
     uint expectedBalance = 0.0006 ether + 0.03 ether + 0.0006 ether;
@@ -58,6 +60,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
     uint expectedPrizePoolPot = expectedBalance * 1000 / totalBips;
+    assertEq(pixel8.getPrizesRoyaltiesWinners().prizePoolPot, expectedPrizePoolPot, "prize pool pot");
 
     assertEq(pixel8.gameOver(), false, "gameOver");
 
@@ -84,6 +87,8 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_GameIsOverWhenTileRevealThresholdReached() public {
     _mintAndRevealTiles(10);
 
+    assertEq(pixel8.gameOver(), true, "game over");
+
     payable(pixel8_addr).transfer(0.0006 ether);   // extra since game is already over
 
     uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
@@ -99,11 +104,15 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_WhenGameIsOver_HaveNoPrizesIfNotWinner() public {
     _mintAndRevealTiles(10);
 
+    assertEq(pixel8.gameOver(), true, "game over");
+
     assertEq(pixel8.calculatePrize(owner1), 0, "owner1 is not a winner");
   }
 
   function test_WhenGameIsOver_HaveClaimablePrizes() public {
     _mintAndRevealTiles(10);
+
+    assertEq(pixel8.gameOver(), true, "game over");
 
     uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
@@ -139,6 +148,8 @@ contract Pixel8PrizePool is Pixel8TestBase {
   function test_WhenGameIsOver_Wallet1WinsAll_HaveClaimablePrizes() public {
     _mintAndRevealTilesWallet1WinsAll();
 
+    assertEq(pixel8.gameOver(), true, "game over");
+
     uint expectedBalancePriorToGameOver = 0.0006 ether + 0.01 ether;
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
     uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
@@ -167,6 +178,8 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
     _mintAndRevealTiles(10);
+
+    assertEq(pixel8.gameOver(), true, "game over");
 
     uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
@@ -222,11 +235,6 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.forceSwap{value: 0.01 ether}(5, 2); // force swap 1 tile
     vm.stopPrank();
 
-    // reveal the tiles
-    for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
-      _pixel8_reveal(wallet1, i, "uri1");
-    }
-
     // record trade volume
     vm.startPrank(pool1);
     pixel8.recordTrade(wallet1, 0.01 ether, true, 1);
@@ -234,28 +242,35 @@ contract Pixel8PrizePool is Pixel8TestBase {
     pixel8.recordTrade(wallet2, 0.02 ether, true, 1);
     vm.stopPrank();
 
-    // NOTE: the force-swap payments are included in the prize pool pot + dev royalties
+    assertEq(pixel8.gameOver(), false, "game not yet over");
+
+    // reveal the remaining tiles
+    for (uint i = 6; i <= 10 && i <= _maxToReveal; i++) {
+      _pixel8_reveal(wallet1, i, "uri1");
+    }
   }
 
   function _mintAndRevealTilesWallet1WinsAll() internal {
     vm.startPrank(pool1);
     pixel8.batchMint(wallet1, 1, 9);
-    pixel8.batchMint(wallet2, 10, 10);
+    pixel8.batchMint(wallet2, 10, 1);
     vm.stopPrank();
 
     for (uint i = 1; i <= 9; i++) {
       _pixel8_reveal(wallet1, i, "uri1");
     }
 
+    // trade volume
+    vm.prank(pool1);
+    pixel8.recordTrade(wallet1, 0.03 ether, true, 1);
+
     // force swaps
     vm.deal(wallet1, 0.01 ether);
     vm.prank(wallet1);
     pixel8.forceSwap{value: 0.01 ether}(1, 10);
 
+    assertEq(pixel8.gameOver(), false, "game not yet over");
     _pixel8_reveal(wallet1, 10, "uri1");
-
-    // trade volume
-    vm.prank(pool1);
-    pixel8.recordTrade(wallet1, 0.03 ether, true, 1);
+    assertEq(pixel8.gameOver(), true, "game over");
   }
 }

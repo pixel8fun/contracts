@@ -57,4 +57,25 @@ contract Pixel8TradeRecordingTest is Pixel8TestBase {
         
         vm.stopPrank();
     }
+
+    function testRecordTrade_GameOver_UpdatesVolume_ButNotBiggestTrader() public {
+        vm.prank(pool1);
+        pixel8.recordTrade(wallet1, 1 ether, true, 1);
+
+        assertEq(pixel8.tradingVolume(wallet1), 1 ether);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 1 ether);
+
+        _pixel8_mint_and_reveal(wallet1, 1, 10);
+
+        assertEq(pixel8.gameOver(), true, "game over");
+
+        vm.prank(pool1);
+        pixel8.recordTrade(wallet2, 2 ether, true, 1);
+
+        assertEq(pixel8.tradingVolume(wallet1), 1 ether);
+        assertEq(pixel8.tradingVolume(wallet2), 0); // nothing recorded for wallet2 because game is over
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
+        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 1 ether);
+    }
 } 
