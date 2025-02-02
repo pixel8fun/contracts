@@ -617,6 +617,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @param _wallet The wallet to claim for.
    */
   function claimPrize(address _wallet) external {
+    if (!gameOver) {
+      revert LibErrors.GameNotOver();
+    }
+
     if (prizeClaimed[_wallet]) {
       revert LibErrors.PrizeAlreadyClaimed(_wallet);
     }

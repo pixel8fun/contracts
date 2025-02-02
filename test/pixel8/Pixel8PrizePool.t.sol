@@ -52,6 +52,11 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(pixel8.calculatePrize(wallet1), 0, "no prize claimable yet");    
   }
 
+  function test_ClaimPrize_BeforeGameOver() public {
+    vm.expectRevert(abi.encodeWithSelector(LibErrors.GameNotOver.selector));
+    pixel8.claimPrize(wallet1);
+  }
+
   function test_GetWinners_BeforeGameOver() public {
     _mintAndRevealTiles(9);
 
