@@ -5,6 +5,7 @@ import { MessageHashUtils } from "lib/openzeppelin-contracts/contracts/utils/cry
 import { ERC721, IERC721TokenReceiver } from "src/ERC721.sol";
 import { Auth } from "src/Auth.sol";
 import { Pixel8 } from "src/Pixel8.sol";  
+import { GameStats } from "src/GameStats.sol";
 
 import {Test, console2 as c} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -26,7 +27,10 @@ abstract contract TestBase01 is Test {
   address payable wallet5 = payable(address(0x1234567890126));
 
   Pixel8 public pixel8;
-  address pixel8_addr;
+  address public pixel8_addr;
+
+  GameStats public gameStats;
+  address public gameStats_addr;
 
   Pixel8.Config public defaultPixel8Config;
 
@@ -36,9 +40,17 @@ abstract contract TestBase01 is Test {
   }
 
   function setUp() public virtual {   
+    gameStats = new GameStats(owner1, address(0));
+    gameStats_addr = address(gameStats);
+
     if (defaultPixel8Config.owner == address(0)) {
       defaultPixel8Config = _getDefaultPixel8Config();
     }
+
+    if (defaultPixel8Config.linkedContracts.gameStats == address(0)) {
+      defaultPixel8Config.linkedContracts.gameStats = gameStats_addr;
+    }
+
     pixel8 = new Pixel8(defaultPixel8Config);
     pixel8_addr = address(pixel8);
   }
@@ -51,13 +63,15 @@ abstract contract TestBase01 is Test {
       symbol: "PIXEL8",
       owner: owner1,
       authoriser: authoriser1,
+      linkedContracts: Pixel8.LinkedContractsConfig({
+        gameStats: address(0),
+        pool: address(0)
+      }),
       devRoyalty: Pixel8.Royalties({
-        amount: 0.01 ether, // the Pixel8 constructor should ignore this
         receiver: owner1,
         feeBips: 1000 // 10%
       }),
       creatorRoyalty: Pixel8.Royalties({
-        amount: 0.01 ether, // the Pixel8 constructor should ignore this
         receiver: creator1,
         feeBips: 500 // 5%
       }),

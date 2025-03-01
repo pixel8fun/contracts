@@ -7,6 +7,7 @@ import { IMintSwapPool } from "src/IMintSwapPool.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { MintSwapPoolTestBase } from "./MintSwapPoolTestBase.sol";
 import { PoolCurve, PoolStatus } from "src/Common.sol";
+import { Pixel8 } from "src/Pixel8.sol";
 
 contract MintSwapPoolBasic is MintSwapPoolTestBase {
   function test_Pool_DefaultConfig() public {
@@ -120,9 +121,10 @@ contract MintSwapPoolBasic is MintSwapPoolTestBase {
     pool.create(_getDefaultPoolConfig());
 
     // Test that new pool creator can create pools
+    Pixel8 newPixel8 = new Pixel8(defaultPixel8Config);
     vm.prank(wallet1);
     pool.create(IMintSwapPool.PoolConfig({
-      nft: address(0x123),
+      nft: address(newPixel8),
       curve: PoolCurve({
         mintStartId: 1,
         mintEndId: 10,

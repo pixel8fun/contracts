@@ -22,18 +22,40 @@ contract GameStats is Base, IGameStats, ERC165   {
         mapping(address => uint) tradingVolume;
         address highestTradingVolume;
 
-        // Prize pool final pot
-        uint pot;
-
         // Game state
         bool gameOver;
-        mapping(address => bool) prizeClaimed;
     }
 
     // Mapping of Pixel8 contract address to its game data
-    mapping(address => GameData) private games;
+    mapping(address => GameData) public games;
 
-    constructor(address _pool) Base(_pool, msg.sender) {}
+    constructor(address _owner, address _pool) Base(_pool, _owner) {}
+
+    // Getters for mappings
+
+    function tradingVolume(address _pixel8, address _wallet) external view returns (uint) {
+        return games[_pixel8].tradingVolume[_wallet];
+    }
+
+    function highestTradingVolume(address _pixel8) external view returns (address) {
+        return games[_pixel8].highestTradingVolume;
+    }
+
+    function numForceSwaps(address _pixel8, address _wallet) external view returns (uint) {
+        return games[_pixel8].numForceSwaps[_wallet];
+    }
+
+    function highestNumForceSwaps(address _pixel8) external view returns (address) {
+        return games[_pixel8].highestNumForceSwaps;
+    }
+
+    function points(address _pixel8, address _wallet) external view returns (uint) {
+        return games[_pixel8].points[_wallet];
+    }
+
+    function highestPoints(address _pixel8) external view returns (address[3] memory) {
+        return games[_pixel8].highestPoints;
+    }
 
     // Interface
 
@@ -41,13 +63,13 @@ contract GameStats is Base, IGameStats, ERC165   {
         return type(IGameStats).interfaceId == interfaceId || ERC165.supportsInterface(interfaceId);
     }
 
-    function addRevealPoints(uint _points) external {
+    function addRevealPoints(address _wallet, uint _points) external {
         GameData storage game = games[msg.sender];
         if (game.gameOver) {
             revert LibErrors.GameOver();
         }
 
-        _addPlayerPoints(game, msg.sender, _points);
+        _addPlayerPoints(game, _wallet, _points);
     }
 
     function recordForceSwap(address _wallet) external {
@@ -75,88 +97,57 @@ contract GameStats is Base, IGameStats, ERC165   {
         }
     }
 
-    function setGameOver(uint256 _prizePoolPot) external {
+    function setGameOver() external {
         GameData storage game = games[msg.sender];
         if (game.gameOver) {
             revert LibErrors.GameOver();
         }
         game.gameOver = true;
-        game.pot = _prizePoolPot;
     }
 
-    function getPrizesWinners(address _pixel8) external view returns (
-        uint prizePoolPot,
-        address biggestThief,
-        uint biggestThiefPoints,
-        address biggestTrader,
-        uint biggestTraderVolume,
-        address[3] memory highestScorers,
-        uint[3] memory highestScores
-    ) {
+    function getPrizesWinners(address _pixel8) external view returns (PrizesWinners memory winners) {
         GameData storage game = games[_pixel8];
         
-        prizePoolPot = game.pot;
-        biggestThief = game.highestNumForceSwaps;
-        biggestThiefPoints = game.numForceSwaps[game.highestNumForceSwaps];
-        biggestTrader = game.highestTradingVolume;
-        biggestTraderVolume = game.tradingVolume[game.highestTradingVolume];
-        highestScorers = game.highestPoints;
+        winners.biggestThief = game.highestNumForceSwaps;
+        winners.biggestThiefPoints = game.numForceSwaps[game.highestNumForceSwaps];
+        winners.biggestTrader = game.highestTradingVolume;
+        winners.biggestTraderVolume = game.tradingVolume[game.highestTradingVolume];
+        winners.highestScorers = game.highestPoints;
         
         for (uint i = 0; i < 3; i++) {
-            highestScores[i] = game.points[game.highestPoints[i]];
+            winners.highestScores[i] = game.points[game.highestPoints[i]];
         }
     }
 
-    function calculatePrize(address _pixel8, address _wallet) public view returns (uint) {
+    function calculatePrize(address _pixel8, uint _prizePoolPot,address _wallet) public view returns (uint) {
         GameData storage game = games[_pixel8];
         if (!game.gameOver) {
             return 0;
         }
-        
+
         uint prize = 0;
 
         if (game.highestNumForceSwaps == _wallet) {
-            prize += game.pot * 100 / 1000; // 10%
+            prize += _prizePoolPot * 100 / 1000; // 10%
         }
         
         if (game.highestTradingVolume == _wallet) {
-            prize += game.pot * 100 / 1000; // 10%
+            prize += _prizePoolPot * 100 / 1000; // 10%
         }
 
         for (uint i = 0; i < 3; i++) {
             if (game.highestPoints[i] == _wallet) {
                 if (i == 0) {
-                    prize += game.pot * 450 / 1000; // 45%
+                    prize += _prizePoolPot * 450 / 1000; // 45%
                 } else if (i == 1) {
-                    prize += game.pot * 250 / 1000; // 25%
+                    prize += _prizePoolPot * 250 / 1000; // 25%
                 } else if (i == 2) {
-                    prize += game.pot * 100 / 1000; // 10%
+                    prize += _prizePoolPot * 100 / 1000; // 10%
                 }
             }
         }
 
         return prize;
-    }
-
-    function claimPrize(address _pixel8, address _wallet) external {
-        GameData storage game = games[_pixel8];
-        if (!game.gameOver) {
-            revert LibErrors.GameNotOver();
-        }
-
-        if (game.prizeClaimed[_wallet]) {
-            revert LibErrors.PrizeAlreadyClaimed(_wallet);
-        }
-
-        game.prizeClaimed[_wallet] = true;
-
-        // Call Pixel8 to send the prize
-        (bool success, ) = _pixel8.call(
-            abi.encodeWithSignature("payoutPrize(address,uint256)", _wallet, calculatePrize(_pixel8, _wallet))
-        );
-        if (!success) {
-            revert LibErrors.PrizePayoutFailed(_wallet);
-        }
     }
 
     // Internal/private methods

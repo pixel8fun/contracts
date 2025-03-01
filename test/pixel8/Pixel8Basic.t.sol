@@ -23,11 +23,13 @@ contract Pixel8Basic is Pixel8TestBase {
     assertEq(forceSwapConfig.cost, 0.01 ether, "forceSwapConfig.cost");
     assertEq(forceSwapConfig.cooldownPeriod, 1 hours, "forceSwapConfig.cooldownPeriod");
 
-    Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyalties();
-    assertEq(devRoyalties.amount, 0, "devRoyalties.amount should start at 0");
+    Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyaltyConfig();
+    assertEq(devRoyalties.receiver, owner1, "devRoyalties.receiver");
+    assertEq(devRoyalties.feeBips, 1000, "devRoyalties.feeBips");
 
-    Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyalties();
-    assertEq(creatorRoyalties.amount, 0, "creatorRoyalties.amount should start at 0");
+    Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyaltyConfig();
+    assertEq(creatorRoyalties.receiver, creator1, "creatorRoyalties.receiver");
+    assertEq(creatorRoyalties.feeBips, 500, "creatorRoyalties.feeBips");
 
     Pixel8.TileState memory tileState = pixel8.getTileState(1);
     assertEq(tileState.revealed, false, "Tile should not be revealed initially");

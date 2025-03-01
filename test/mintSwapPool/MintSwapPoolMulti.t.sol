@@ -6,17 +6,25 @@ import { MintSwapPool } from "src/MintSwapPool.sol";
 import { IMintSwapPool } from "src/IMintSwapPool.sol";
 import { LibErrors } from "src/LibErrors.sol";
 import { Pixel8 } from "src/Pixel8.sol";
+import { GameStats } from "src/GameStats.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "src/Common.sol";
 
 contract MintSwapPoolMulti is MintSwapPoolTestBase {
   Pixel8 public pixel8_2;
   address public pixel8_2_addr;
 
+  GameStats public gameStats_2;
+  address public gameStats_2_addr;
+
   function setUp() public override {
     super.setUp();
 
     // setup second NFT contract
+    gameStats_2 = new GameStats(owner1, address(0));
+    gameStats_2_addr = address(gameStats_2);
+
     Pixel8.Config memory config = _getDefaultPixel8Config();
+    config.linkedContracts.gameStats = gameStats_2_addr;
     pixel8_2 = new Pixel8(config);
     pixel8_2_addr = address(pixel8_2);
 
@@ -32,8 +40,10 @@ contract MintSwapPoolMulti is MintSwapPoolTestBase {
       })
     }));
 
-    vm.prank(owner1);
+    vm.startPrank(owner1);
+    gameStats_2.setPool(pool_addr);
     pixel8_2.setPool(pool_addr);
+    vm.stopPrank();
   }
 
   function test_Pool_MultiPool_BuySell() public {

@@ -9,14 +9,14 @@ import { IERC721 } from "openzeppelin/interfaces/IERC721.sol";
 import { ERC2981 } from "openzeppelin/token/common/ERC2981.sol";
 import { IERC4906 } from "openzeppelin/interfaces/IERC4906.sol";
 import { Base64 } from "openzeppelin/utils/Base64.sol";
-import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { ERC165 } from "openzeppelin/utils/introspection/ERC165.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { IPixel8 } from "./IPixel8.sol";
 import { Base } from "./Base.sol";
+import { IGameStats } from "./IGameStats.sol";
 
 
-contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
+contract Pixel8 is Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
   /**
    * @dev The version of the contract.
    */
@@ -42,16 +42,15 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     uint cooldownPeriod;
   }
 
+
   /**
-   * @dev Royalties.
+   * @dev Royalties config.
    */
   struct Royalties {
     /** The receiver of the royalties. */
     address receiver;
     /** The trading fee in bips. */
     uint96 feeBips;
-    /** The final amount of royalties when game is over. */
-    uint amount;
   }
 
   /**
@@ -65,6 +64,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     Auth.Signature authSig;
   }
 
+  /** The prize pool fee in bips. */
+  uint96 private prizePoolFeeBips;
+
   /**
    * @dev Dev royalties info.
    */
@@ -74,6 +76,21 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
    * @dev Creator royalties info.
    */
   Royalties private creatorRoyalties;
+
+  /**
+   * @dev Prize pool final amount.
+   */
+  uint256 private prizePoolFinalAmount;
+
+  /**
+   * @dev Dev royalties final amount.
+   */
+  uint256 private devRoyaltiesFinalAmount;
+
+  /**
+   * @dev Creator royalties final amount.
+   */
+  uint256 private creatorRoyaltiesFinalAmount;
 
   /**
    * @dev The game stats contract.
@@ -128,7 +145,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
   /**
    * @dev Force-swap config.
    */
-  ForceSwap public forceSwapConfig;
+  ForceSwap private forceSwapConfig;
 
   /**
    * @dev The number of tokens that need to be minted before external trading is enabled.
@@ -147,6 +164,13 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
 
   // Constructor
 
+  struct LinkedContractsConfig {
+    /** Game stats contract */
+    address gameStats;
+    /** Pool address */
+    address pool;
+  }
+
   struct Config {
     /** Name of the contract */
     string name;
@@ -160,20 +184,18 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     Royalties devRoyalty;
     /** Creator royalty receiver */
     Royalties creatorRoyalty;
+    /** Force swap config */
+    ForceSwap forceSwapConfig;
     /** Default token image as a data URI. */
     string defaultImage;
     /** Prize pool trading fee. */
     uint96 prizePoolFeeBips;
     /** Game over reveal threshold - the game has ended once the given on. of tiles have been revealed.*/
     uint gameOverRevealThreshold;
-    /** Force swap config */
-    ForceSwap forceSwapConfig;
     /** Number of tokens that need to be minted before external trading is enabled */
     uint externalTradeThreshold;
-    /** Game stats contract */
-    address gameStats;
-    /** Pool address */
-    address pool;
+    /** Linked contracts */
+    LinkedContractsConfig linkedContracts;
   }
   
   /**
@@ -181,8 +203,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
    */
   constructor(Config memory _config) 
     ERC721(_config.name, _config.symbol) 
-    Ownable(_config.owner)
-    Base(_config.pool, _config.owner)
+    Base(_config.linkedContracts.pool, _config.owner)
   {
     authoriser = _config.authoriser;
     defaultImage = _config.defaultImage;
@@ -194,9 +215,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     creatorRoyalties.feeBips = _config.creatorRoyalty.feeBips;
     forceSwapConfig = _config.forceSwapConfig;
     externalTradeThreshold = _config.externalTradeThreshold;
-    gameStats = IGameStats(_config.gameStats);
+    gameStats = IGameStats(_config.linkedContracts.gameStats);
+    prizePoolFeeBips = _config.prizePoolFeeBips;
 
-    _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips);
+    _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips + prizePoolFeeBips);
   }
 
   // Approvals
@@ -220,28 +242,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
 
   // Interface
 
-  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981, ERC165) returns (bool) {
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981, IERC165) returns (bool) {
     return type(IPixel8).interfaceId == interfaceId
       || ERC721.supportsInterface(interfaceId)
       || ERC2981.supportsInterface(interfaceId)
       || type(IERC4906).interfaceId == interfaceId
       || ERC165.supportsInterface(interfaceId);
-  }
-
-  // Pool
-
-  /**
-   * @dev Set the pool address.
-   */
-  function setPool(address newPool) external onlyOwner {
-    if (pool != address(0)) {
-      revert LibErrors.PoolAlreadySet();
-    }
-    if (newPool == address(0)) {
-      revert LibErrors.InvalidAddress(newPool);
-    }
-    pool = newPool;
-    emit PoolSet(newPool);
   }
 
   // token URI
@@ -271,17 +277,21 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
 
   // Functions - getters
 
-  function getDevRoyalties() external view returns (Royalties memory) {
+  function getDevRoyaltyConfig() external view returns (Royalties memory) {
     return devRoyalties;
   }
 
-  function getCreatorRoyalties() external view returns (Royalties memory) {
+  function getCreatorRoyaltyConfig() external view returns (Royalties memory) {
     return creatorRoyalties;
+  }
+
+  function getPrizePoolFeeBips() external view returns (uint96) {
+    return prizePoolFeeBips;
   }
 
   function getForceSwapConfig() external view returns (ForceSwap memory) {
     return forceSwapConfig;
-  }
+  }  
 
   function getTileState(uint256 tokenId) external view returns (TileState memory) {
     return TileState({
@@ -292,14 +302,25 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     });
   }
 
-  function getRoyalties() public view returns (uint devRoyaltiesPot, uint creatorRoyaltiesPot) {
+  /**
+   * @dev Royalties and prizes.
+   */
+  struct RoyaltiesPrizes {
+    uint devRoyaltiesPot;
+    uint creatorRoyaltiesPot;
+    uint prizePoolPot;
+  }
+
+  function getRoyaltiesPrizes() public view returns (RoyaltiesPrizes memory prizes) {
     if (gameOver) {
-      devRoyaltiesPot = devRoyalties.amount;
-      creatorRoyaltiesPot = creatorRoyalties.amount;
+      prizes.devRoyaltiesPot = devRoyaltiesFinalAmount;
+      prizes.creatorRoyaltiesPot = creatorRoyaltiesFinalAmount;
+      prizes.prizePoolPot = prizePoolFinalAmount;
     } else {
-      uint totalBips = devRoyalties.feeBips + creatorRoyalties.feeBips;
-      devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
-      creatorRoyaltiesPot = address(this).balance * creatorRoyalties.feeBips / totalBips;
+      uint totalBips = devRoyalties.feeBips + creatorRoyalties.feeBips + prizePoolFeeBips;
+      prizes.devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
+      prizes.creatorRoyaltiesPot = address(this).balance * creatorRoyalties.feeBips / totalBips;
+      prizes.prizePoolPot = address(this).balance - prizes.devRoyaltiesPot - prizes.creatorRoyaltiesPot;
     }
   }
 
@@ -333,11 +354,11 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     revealed[_params.tokenId] = true;
 
     if (!gameOver) {  
-      gameStats.addRevealPoints(_params.points);
+      gameStats.addRevealPoints(_params.wallet, _params.points);
     }
 
     numRevealed++;
-    if (numRevealed >= gameOverRevealThreshold) {
+    if (numRevealed >= gameOverRevealThreshold && !gameOver) {
       _setGameOver();
     }
   }
@@ -358,7 +379,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     authoriser = _authoriser;
   }
 
-  // Pool functions 
+  // Functions needed by the pool 
 
   /**
    * @dev See {IPixel8-getRoyaltyInfo}.
@@ -455,41 +476,53 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
     emit ForceSwapped(fromTokenId, toTokenId);
   }
 
+  function claimPrize(address _wallet) external {
+    if (!gameOver) {
+      revert LibErrors.GameNotOver();
+    }
+
+    if (prizeClaimed[_wallet]) {
+      revert LibErrors.PrizeAlreadyClaimed(_wallet);
+    }
+
+    prizeClaimed[_wallet] = true;
+
+    RoyaltiesPrizes memory prizes = getRoyaltiesPrizes();
+
+    uint prize = gameStats.calculatePrize(address(this), prizes.prizePoolPot, _wallet);
+
+    payable(_wallet).transfer(prize);
+  }
+
+  // Private methods
+
   /**
    * @dev Game over.
    */
   function _setGameOver() private {
-    gameOver = true;
+    RoyaltiesPrizes memory prizes = getRoyaltiesPrizes();
+    devRoyaltiesFinalAmount = prizes.devRoyaltiesPot;
+    creatorRoyaltiesFinalAmount = prizes.creatorRoyaltiesPot;
+    prizePoolFinalAmount = prizes.prizePoolPot;
 
-    (uint devRoyaltiesPot, uint creatorRoyaltiesPot) = getRoyalties();
-    devRoyalties.amount = devRoyaltiesPot;
-    creatorRoyalties.amount = creatorRoyaltiesPot;
+    // do this after getting latest prizes / royalties so that the 
+    // calculation above is correct.
+    gameOver = true;
 
     // update royalty fee to just be the dev fee and also send all money to the dev receiver
     _setDefaultRoyalty(devRoyalties.receiver, devRoyalties.feeBips);
 
     // withdraw dev and creator royalties so far
-    payable(devRoyalties.receiver).transfer(devRoyaltiesPot);
-    payable(creatorRoyalties.receiver).transfer(creatorRoyaltiesPot);
+    payable(devRoyalties.receiver).transfer(devRoyaltiesFinalAmount);
+    payable(creatorRoyalties.receiver).transfer(creatorRoyaltiesFinalAmount);
 
     // Tell game stats contract that game is over
-    gameStats.setGameOver(address(this).balance);
+    gameStats.setGameOver();
 
     emit GameOver();
   }
 
-  /**
-   * @dev Pay out prize money to given wallet.
-   *
-   * @param _wallet The wallet to pay out to.
-   * @param _amount The amount to pay out.
-   */
-  function payoutPrize(address _wallet, uint _amount) external {
-    if (msg.sender != gameStats) {
-      revert LibErrors.Unauthorized(msg.sender);
-    }
-    payable(_wallet).transfer(_amount);
-  }
+
 
   /**
    * @dev Updates lastCooldownStartTime for a range of token IDs.
@@ -519,10 +552,4 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
    * @dev Enable this contract to receive ether.
    */
   receive() external payable {}  
-}
-
-interface IGameStats {
-  function addRevealPoints(uint points) external;
-  function recordForceSwap(address wallet) external;
-  function setGameOver(uint96 feeBips) external;
 }

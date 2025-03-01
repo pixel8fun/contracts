@@ -17,8 +17,12 @@ contract FactoryTest is TestBase01 {
 
     function setUp() public override {
         super.setUp();
+        
         factory = new Factory(authoriser1);
         pool = new MintSwapPool(owner1, address(factory));
+
+        vm.prank(owner1);
+        gameStats.setPool(address(pool));
     }
 
     function test_createPixel8_Success() public {
@@ -37,6 +41,7 @@ contract FactoryTest is TestBase01 {
 
         address pixel8Address = factory.createPixel8(
             address(pool),
+            address(gameStats),
             config,
             curve,
             sig
@@ -50,11 +55,12 @@ contract FactoryTest is TestBase01 {
         assertEq(newPixel8.owner(), address(factory));
         assertEq(newPixel8.authoriser(), authoriser1);
         assertEq(newPixel8.pool(), address(pool));
+        assertEq(address(newPixel8.gameStats()), address(gameStats));
         assertEq(newPixel8.defaultImage(), "img");
         assertEq(newPixel8.name(), "Pixel8");
         assertEq(newPixel8.symbol(), "PIXEL8");
         assertEq(pool.poolIds(address(newPixel8)), 1);
-        (IPixel8 retNft, PoolCurve memory retCurve, ,) = pool.pools(1);
+        (IPixel8 retNft, , PoolCurve memory retCurve, ,) = pool.pools(1);
         assertEq(address(retNft), address(newPixel8));
         assertEq(retCurve.mintStartId, 1);
         assertEq(retCurve.mintEndId, 100);
@@ -80,6 +86,7 @@ contract FactoryTest is TestBase01 {
         vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, address(this)));
         factory.createPixel8(
             address(pool),
+            address(gameStats),
             config,
             curve,
             sig
@@ -103,6 +110,7 @@ contract FactoryTest is TestBase01 {
         vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureExpired.selector, address(this)));
         factory.createPixel8(
             address(pool),
+            address(gameStats),
             config,
             curve,
             sig
@@ -129,6 +137,7 @@ contract FactoryTest is TestBase01 {
         vm.expectRevert(abi.encodeWithSelector(LibErrors.SignatureInvalid.selector, address(this)));
         factory.createPixel8(
             address(pool),
+            address(gameStats),
             config,
             curve,
             sig

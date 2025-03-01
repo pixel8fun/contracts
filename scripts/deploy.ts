@@ -1,6 +1,6 @@
 import { BigVal } from 'bigval'
 import { $ } from 'execa'
-import { http, createPublicClient, createWalletClient, encodeAbiParameters, encodeDeployData } from 'viem';
+import { http, createPublicClient, createWalletClient, encodeAbiParameters, encodeDeployData, zeroAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { type Chain, arbitrumSepolia, localhost } from 'viem/chains';
 import yargs from 'yargs';
@@ -71,6 +71,10 @@ const getPixel8ConstructorArgs = (chainInfo: typeof chains[keyof typeof chains])
     cooldownPeriod: 1n * 60n * 60n * 1000n, // 1 hour
   },
   externalTradeThreshold: 1234n, // 70% of 1764 = 1234
+  linkedContracts: {
+    gameStats: zeroAddress,
+    pool: zeroAddress
+  }
 })
 
 const encodeConstructorArgs = (abi: any, args: any) => {
@@ -155,13 +159,13 @@ const main = async () => {
 
   // deploy game stats
   log("Deploying GameStats instance ...")
-  const gameStatsConstructorArgs = [pool.address]
+  const gameStatsConstructorArgs = [chainInfo.owner,pool.address]
   const gameStatsCreationCode = encodeDeployData({
     abi: gameStatsAbi,
     bytecode: GameStatsArtifact.bytecode.object,
     args: gameStatsConstructorArgs as any
   })
-  const gameStats = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}c`, creationCode: gameStatsCreationCode, gasLimit: 1000000n, abi: gameStatsAbi })
+  const gameStats = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}c`, creationCode: gameStatsCreationCode, gasLimit: 2000000n, abi: gameStatsAbi })
   log(`...done - deployed to ${gameStats.address}`)
 
   // deploy pixel8

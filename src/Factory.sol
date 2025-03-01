@@ -45,7 +45,8 @@ contract Factory is Auth {
         // Deploy new Pixel8 instance with modified config
         Pixel8.Config memory config = pixel8Config;
         config.owner = address(this);
-        config.gameStats = gameStats;
+        config.linkedContracts.pool = pool;
+        config.linkedContracts.gameStats = gameStats;
         address pixel8 = address(new Pixel8(config));
 
         // Create pool for the NFT
@@ -54,8 +55,6 @@ contract Factory is Auth {
             curve: poolCurve
         }));
 
-        // Set pool on NFT
-        Pixel8(payable(pixel8)).setPool(pool);
         unchecked { ++totalCreated; }
 
         emit Pixel8Created(pixel8);

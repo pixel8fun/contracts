@@ -10,16 +10,18 @@ contract Pixel8Royalties is Pixel8TestBase {
   function setUp() public override {
     super.setUp();
 
-    vm.prank(owner1);
+    vm.startPrank(owner1);
     pixel8.setPool(pool1);
+    gameStats.setPool(pool1); 
+    vm.stopPrank();
   }
 
   function test_DefaultRoyaltyConfig() public {
-    Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyalties();
+    Pixel8.Royalties memory devRoyalties = pixel8.getDevRoyaltyConfig();
     assertEq(devRoyalties.feeBips, 1000, "devRoyalties.feeBips");
     assertEq(devRoyalties.receiver, owner1, "devRoyalties.receiver");
 
-    Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyalties();
+    Pixel8.Royalties memory creatorRoyalties = pixel8.getCreatorRoyaltyConfig();
     assertEq(creatorRoyalties.feeBips, 500, "creatorRoyalties.feeBips");
     assertEq(creatorRoyalties.receiver, creator1, "creatorRoyalties.receiver");
 
@@ -40,10 +42,10 @@ contract Pixel8Royalties is Pixel8TestBase {
     uint expectedCreatorRoyalties = 1 ether * 500 / totalBips; // 0.2 ether
     uint expectedPrizePool = 1 ether * 1000 / totalBips; // 0.4 ether
 
-    Pixel8.PrizesRoyaltiesWinners memory winners = pixel8.getPrizesRoyaltiesWinners();
-    assertEq(winners.prizePoolPot, expectedPrizePool, "prize pool pot");
-    assertEq(winners.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
-    assertEq(winners.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
+    Pixel8.RoyaltiesPrizes memory royaltiesPrizes = pixel8.getRoyaltiesPrizes();
+    assertEq(royaltiesPrizes.prizePoolPot, expectedPrizePool, "prize pool pot");
+    assertEq(royaltiesPrizes.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
+    assertEq(royaltiesPrizes.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
   }
 
   function test_RoyaltyDistributionAfterGameOver() public {
@@ -61,17 +63,10 @@ contract Pixel8Royalties is Pixel8TestBase {
 
     assertEq(owner1.balance - balanceBeforeDev, expectedDevRoyalties, "dev royalties paid");
     assertEq(creator1.balance - balanceBeforeCreator, expectedCreatorRoyalties, "creator royalties paid");
-    Pixel8.PrizesRoyaltiesWinners memory winners = pixel8.getPrizesRoyaltiesWinners();
-    assertEq(winners.prizePoolPot, expectedPrizePool, "prize pool pot");
-    assertEq(winners.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
-    assertEq(winners.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
-
-    // Check final royalty amounts are recorded
-    Pixel8.Royalties memory devRoyaltiesRecord = pixel8.getDevRoyalties();
-    assertEq(devRoyaltiesRecord.amount, expectedDevRoyalties, "dev royalties amount recorded");
-
-    Pixel8.Royalties memory creatorRoyaltiesRecord = pixel8.getCreatorRoyalties();
-    assertEq(creatorRoyaltiesRecord.amount, expectedCreatorRoyalties, "creator royalties amount recorded");
+    Pixel8.RoyaltiesPrizes memory royaltiesPrizes = pixel8.getRoyaltiesPrizes();
+    assertEq(royaltiesPrizes.prizePoolPot, expectedPrizePool, "prize pool pot");
+    assertEq(royaltiesPrizes.devRoyaltiesPot, expectedDevRoyalties, "dev royalties");
+    assertEq(royaltiesPrizes.creatorRoyaltiesPot, expectedCreatorRoyalties, "creator royalties");
 
     // After game over, royalties should only go to dev
     (address receiver, uint256 feeBips) = pixel8.getRoyaltyInfo();

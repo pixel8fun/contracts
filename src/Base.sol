@@ -11,9 +11,6 @@ abstract contract Base is Ownable {
   address public pool;
 
   constructor(address _pool, address _owner) Ownable(_owner) {
-    if (_pool == address(0)) {
-      revert LibErrors.InvalidAddress(_pool);
-    }
     pool = _pool;
   }
 
@@ -23,6 +20,9 @@ abstract contract Base is Ownable {
   function setPool(address newPool) external onlyOwner {
     if (newPool == address(0)) {
       revert LibErrors.InvalidAddress(newPool);
+    }
+    if (pool != address(0)) {
+      revert LibErrors.PoolAlreadySet();
     }
     pool = newPool;
     emit PoolSet(newPool);

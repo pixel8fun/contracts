@@ -5,25 +5,24 @@ pragma solidity ^0.8.24;
  * @dev Game stats contract.
  */
 interface IGameStats {
-  function addRevealPoints(uint _points) external;
+  struct PrizesWinners {
+    address biggestThief;
+    uint biggestThiefPoints;
+    address biggestTrader;
+    uint biggestTraderVolume;
+    address[3] highestScorers;
+    uint[3] highestScores;
+  }
+
+  function addRevealPoints(address _wallet, uint _points) external;
 
   function recordForceSwap(address _wallet) external;
 
-  function setGameOver(uint256 _prizePoolPot) external;
+  function setGameOver() external;
 
-  function getPrizesWinners(address _pixel8) external view returns (
-    uint prizePoolPot,
-    address biggestThief,
-    uint biggestThiefPoints,
-    address biggestTrader,
-    uint biggestTraderVolume,
-    address[3] memory highestScorers,
-    uint[3] memory highestScores
-  );  
+  function getPrizesWinners(address _pixel8) external view returns (PrizesWinners memory);
 
-  function calculatePrize(address _pixel8, address _wallet) external view returns (uint);
-
-  function claimPrize(address _pixel8, address _wallet) external;
+  function calculatePrize(address _pixel8, uint _prizePoolPot, address _wallet) external view returns (uint);
 
   /**
    * @dev Log trading volume.
