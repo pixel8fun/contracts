@@ -29,6 +29,7 @@ contract Factory is Auth {
 
     function createPixel8(
         address pool,
+        address gameStats,
         Pixel8.Config calldata pixel8Config,
         PoolCurve calldata poolCurve,
         Auth.Signature calldata signature
@@ -44,6 +45,7 @@ contract Factory is Auth {
         // Deploy new Pixel8 instance with modified config
         Pixel8.Config memory config = pixel8Config;
         config.owner = address(this);
+        config.gameStats = gameStats;
         address pixel8 = address(new Pixel8(config));
 
         // Create pool for the NFT

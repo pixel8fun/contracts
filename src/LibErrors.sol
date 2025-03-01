@@ -80,6 +80,11 @@ library LibErrors {
   error PrizeAlreadyClaimed(address wallet);
 
   /**
+   * @dev The prize payout failed.
+   */
+  error PrizePayoutFailed(address wallet);
+
+  /**
    * @dev The address is invalid.
    */
   error InvalidAddress(address addr);

@@ -1,14 +1,15 @@
 import { BigVal } from 'bigval'
 import { $ } from 'execa'
-import { http, type Account, createPublicClient, createWalletClient, encodeAbiParameters, encodeDeployData } from 'viem';
+import { http, createPublicClient, createWalletClient, encodeAbiParameters, encodeDeployData } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { type Chain, arbitrumSepolia, localhost } from 'viem/chains';
 import yargs from 'yargs';
 
 const Pixel8Artifact = require('../out/Pixel8.sol/Pixel8.json')
 const MultiSwapPoolArtifact = require('../out/MintSwapPool.sol/MintSwapPool.json')
+const GameStatsArtifact = require('../out/GameStats.sol/GameStats.json')
 const FactoryArtifact = require('../out/Factory.sol/Factory.json')
-import { factoryAbi, mintSwapPoolAbi, pixel8Abi } from '../dist/esm/abi';
+import { factoryAbi, gameStatsAbi, mintSwapPoolAbi, pixel8Abi } from '../dist/esm/abi';
 import { deployUsingCreate3Factory } from './create3';
 
 const ANVIL_ACCOUNT_1_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
@@ -79,6 +80,14 @@ const encodeConstructorArgs = (abi: any, args: any) => {
   ).slice(2) // remove 0x prefix
 }
 
+const verifySourceCode = async (opts: {chainInfo: typeof chains[keyof typeof chains], verifierApiKey: string, name: string, address: string, abi: any, constructorArgs: any[], srcPath: string}) => {
+  const { chainInfo, verifierApiKey, name, address, abi, constructorArgs, srcPath } = opts
+  log(`Verifying ${name} at ${address}...`)
+  const argsEncoded = encodeConstructorArgs(abi, constructorArgs)
+  await $`forge verify-contract --chain-id ${chainInfo.chainId} --etherscan-api-key ${verifierApiKey} --verifier-url ${chainInfo.verifierApiUrl!} --num-of-optimizations 200 --watch --constructor-args "${argsEncoded}" ${address} ${srcPath}`
+  log(`...verified ${name}`)
+}
+
 const main = async () => {
   const { argv } = yargs(process.argv.slice(2))
   const { chain: chainId } = argv as unknown as{ chain: string }
@@ -122,17 +131,6 @@ const main = async () => {
   const sender = walletClient.account.address
   log(`Deploying from address: ${sender}`)
 
-  // deploy pixel8
-  log("Deploying Pixel8 instance ...")
-  const pixel8ConstructorArgs = [getPixel8ConstructorArgs(chainInfo)]
-  const pixel8CreationCode = encodeDeployData({
-    abi: pixel8Abi,
-    bytecode: Pixel8Artifact.bytecode.object,
-    args: pixel8ConstructorArgs as any
-  })
-  const pixel8 = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}a`, creationCode: pixel8CreationCode, gasLimit: 5000000n, abi: pixel8Abi })
-  log(`...done - deployed to ${pixel8.address}`)
-
   // deploy factory
   log("Deploying Pixel8 Factory ...")
   const factoryConstructorArgs = [chainInfo.authoriser]
@@ -141,7 +139,7 @@ const main = async () => {
     bytecode: FactoryArtifact.bytecode.object,
     args: factoryConstructorArgs as any
   })
-  const factory = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}b`, creationCode: factoryCreationCode, gasLimit: 6000000n, abi: factoryAbi })
+  const factory = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}a`, creationCode: factoryCreationCode, gasLimit: 6000000n, abi: factoryAbi })
   log(`...done - deployed to ${factory.address}`)
 
   // deploy pool
@@ -152,25 +150,40 @@ const main = async () => {
     bytecode: MultiSwapPoolArtifact.bytecode.object,
     args: poolConstructorArgs as any
   })
-  const pool = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}c`, creationCode: poolCreationCode, gasLimit: 2000000n, abi: mintSwapPoolAbi })
+  const pool = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}b`, creationCode: poolCreationCode, gasLimit: 2000000n, abi: mintSwapPoolAbi })
   log(`...done - deployed to ${pool.address}`)
+
+  // deploy game stats
+  log("Deploying GameStats instance ...")
+  const gameStatsConstructorArgs = [pool.address]
+  const gameStatsCreationCode = encodeDeployData({
+    abi: gameStatsAbi,
+    bytecode: GameStatsArtifact.bytecode.object,
+    args: gameStatsConstructorArgs as any
+  })
+  const gameStats = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}c`, creationCode: gameStatsCreationCode, gasLimit: 1000000n, abi: gameStatsAbi })
+  log(`...done - deployed to ${gameStats.address}`)
+
+  // deploy pixel8
+  log("Deploying Pixel8 instance ...")
+  const pixel8ConstructorArgs = [getPixel8ConstructorArgs(chainInfo)]
+  const pixel8CreationCode = encodeDeployData({
+    abi: pixel8Abi,
+    bytecode: Pixel8Artifact.bytecode.object,
+    args: pixel8ConstructorArgs as any
+  })
+  const pixel8 = await deployUsingCreate3Factory({ publicClient, walletClient, salt: `${CREATE3_SALT_PREFIX}d`, creationCode: pixel8CreationCode, gasLimit: 5000000n, abi: pixel8Abi })
+  log(`...done - deployed to ${pixel8.address}`)
 
   // verify
   if (chainInfo.verifierApiUrl && verifierApiKey) {
     log("Verifying contracts ...")
-    
-    log(`Verifying Pixel8 at ${pixel8.address}...`)
-    const pixel8ConstructorArgsEncoded = encodeConstructorArgs(pixel8Abi, pixel8ConstructorArgs)    
-    await $`forge verify-contract --chain-id ${chainInfo.chainId} --etherscan-api-key ${verifierApiKey} --verifier-url ${chainInfo.verifierApiUrl} --num-of-optimizations 200 --watch --constructor-args "${pixel8ConstructorArgsEncoded}" ${pixel8.address} src/Pixel8.sol:Pixel8`
 
-    log(`Verifying Factory at ${factory.address}...`)
-    const factoryConstructorArgsEncoded = encodeConstructorArgs(factoryAbi, factoryConstructorArgs)
-    await $`forge verify-contract --chain-id ${chainInfo.chainId} --etherscan-api-key ${verifierApiKey} --verifier-url ${chainInfo.verifierApiUrl} --num-of-optimizations 200 --watch --constructor-args "${factoryConstructorArgsEncoded}" ${factory.address} src/Pixel8.sol:Pixel8`
+    await verifySourceCode({ chainInfo, verifierApiKey, name: "Factory", address: factory.address, abi: factoryAbi, constructorArgs: factoryConstructorArgs, srcPath: "src/Factory.sol:Factory" })
+    await verifySourceCode({ chainInfo, verifierApiKey, name: "MintSwapPool", address: pool.address, abi: mintSwapPoolAbi, constructorArgs: poolConstructorArgs, srcPath: "src/MintSwapPool.sol:MintSwapPool" })
+    await verifySourceCode({ chainInfo, verifierApiKey, name: "GameStats", address: gameStats.address, abi: gameStatsAbi, constructorArgs: gameStatsConstructorArgs, srcPath: "src/GameStats.sol:GameStats" })
+    await verifySourceCode({ chainInfo, verifierApiKey, name: "Pixel8", address: pixel8.address, abi: pixel8Abi, constructorArgs: pixel8ConstructorArgs, srcPath: "src/Pixel8.sol:Pixel8" })
 
-    log(`Verifying MintSwapPool at ${pool.address}...`)
-    const poolConstructorArgsEncoded = encodeConstructorArgs(mintSwapPoolAbi, poolConstructorArgs)
-    await $`forge verify-contract --chain-id ${chainInfo.chainId} --etherscan-api-key ${verifierApiKey} --verifier-url ${chainInfo.verifierApiUrl} --num-of-optimizations 200 --watch --constructor-args "${poolConstructorArgsEncoded}" ${pool.address} src/MintSwapPool.sol:MintSwapPool`
-    
     log("...done")
   }
 }

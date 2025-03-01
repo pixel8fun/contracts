@@ -10,11 +10,13 @@ import { ERC2981 } from "openzeppelin/token/common/ERC2981.sol";
 import { IERC4906 } from "openzeppelin/interfaces/IERC4906.sol";
 import { Base64 } from "openzeppelin/utils/Base64.sol";
 import { Ownable } from "openzeppelin/access/Ownable.sol";
+import { ERC165 } from "openzeppelin/utils/introspection/ERC165.sol";
 import { LibErrors } from "./LibErrors.sol";
 import { IPixel8 } from "./IPixel8.sol";
+import { Base } from "./Base.sol";
 
 
-contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
+contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8, Base {
   /**
    * @dev The version of the contract.
    */
@@ -29,26 +31,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
    * @dev Emitted when a force swap occurs.
    */
   event ForceSwapped(uint256 fromTokenId, uint256 toTokenId);
-
-  /**
-   * @dev Emitted when the pool is set.
-   */
-  event PoolSet(address pool);
-
-  /**
-   * @dev Emitted when a trade is recorded.
-   */
-  event TradeRecorded(address wallet, uint amount, bool buyOrSell, uint numItems);
-
-  /**
-   * @dev Prize pool info.
-   */
-  struct PrizePool {
-    /** The final pot. */
-    uint pot;
-    /** The trading fee for the prize pool. */
-    uint96 feeBips;
-  }
 
   /**
    * @dev Force-swap config.
@@ -94,14 +76,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   Royalties private creatorRoyalties;
 
   /**
-   * @dev Prize pool info.
+   * @dev The game stats contract.
    */
-  PrizePool private prizePool;
-
-  /**
-   * @dev The liquidity pool contract.
-   */
-  address public pool;
+  IGameStats public gameStats;
 
   /**
    * @dev The authoriser can approve token reveals.
@@ -149,42 +126,18 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   mapping(uint256 => uint256) public lastCooldownStartTime;
 
   /**
-   * @dev Game points for each wallet.
-   */
-  mapping(address => uint) public points;
-  /**
-   * @dev The wallets with the highest points.
-   */
-  address[3] public highestPoints;
-
-  /**
-   * @dev The number of force swaps for each wallet.
-   */
-  mapping(address => uint) public numForceSwaps;
-  /**
-   * @dev The wallet with the highest number of force swaps.
-   */
-  address public highestNumForceSwaps;
-
-  /**
    * @dev Force-swap config.
    */
   ForceSwap public forceSwapConfig;
-
-  /**
-   * @dev The trading volume for each wallet.
-   */
-  mapping(address => uint) public tradingVolume;
-  /**
-   * @dev The wallet with the highest number of force swaps.
-   */
-  address public highestTradingVolume;
 
   /**
    * @dev The number of tokens that need to be minted before external trading is enabled.
    */
   uint public externalTradeThreshold;
 
+  /**
+   * @dev Tile state.
+   */
   struct TileState {
     bool revealed;
     string imageUri;
@@ -217,16 +170,22 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     ForceSwap forceSwapConfig;
     /** Number of tokens that need to be minted before external trading is enabled */
     uint externalTradeThreshold;
+    /** Game stats contract */
+    address gameStats;
+    /** Pool address */
+    address pool;
   }
   
   /**
    * @dev Constructor.
    */
-  constructor(Config memory _config) ERC721(_config.name, _config.symbol) Ownable(_config.owner) {
+  constructor(Config memory _config) 
+    ERC721(_config.name, _config.symbol) 
+    Ownable(_config.owner)
+    Base(_config.pool, _config.owner)
+  {
     authoriser = _config.authoriser;
     defaultImage = _config.defaultImage;
-
-    prizePool.feeBips = _config.prizePoolFeeBips;
     gameOverRevealThreshold = _config.gameOverRevealThreshold;
 
     devRoyalties.receiver = _config.devRoyalty.receiver;
@@ -235,8 +194,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     creatorRoyalties.feeBips = _config.creatorRoyalty.feeBips;
     forceSwapConfig = _config.forceSwapConfig;
     externalTradeThreshold = _config.externalTradeThreshold;
+    gameStats = IGameStats(_config.gameStats);
 
-    _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips + prizePool.feeBips);
+    _setDefaultRoyalty(address(this), devRoyalties.feeBips + creatorRoyalties.feeBips);
   }
 
   // Approvals
@@ -260,10 +220,12 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
 
   // Interface
 
-  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981, IERC165) returns (bool) {
-    return ERC721.supportsInterface(interfaceId)
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981, ERC165) returns (bool) {
+    return type(IPixel8).interfaceId == interfaceId
+      || ERC721.supportsInterface(interfaceId)
       || ERC2981.supportsInterface(interfaceId)
-      || type(IERC4906).interfaceId == interfaceId;
+      || type(IERC4906).interfaceId == interfaceId
+      || ERC165.supportsInterface(interfaceId);
   }
 
   // Pool
@@ -280,19 +242,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
     pool = newPool;
     emit PoolSet(newPool);
-  }
-
-
-  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external override onlyPool {    
-    if (!gameOver) {
-      tradingVolume[_wallet] += _amount;
-
-      if (tradingVolume[_wallet] > tradingVolume[highestTradingVolume]) {
-        highestTradingVolume = _wallet;
-      }
-
-      emit TradeRecorded(_wallet, _amount, _buyOrSell, _numItems);
-    }
   }
 
   // token URI
@@ -330,10 +279,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     return creatorRoyalties;
   }
 
-  function getPrizePool() external view returns (PrizePool memory) {
-    return prizePool;
-  }
-
   function getForceSwapConfig() external view returns (ForceSwap memory) {
     return forceSwapConfig;
   }
@@ -345,6 +290,17 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
         lastCooldownStartTime: lastCooldownStartTime[tokenId],
         owner: _ownerOf[tokenId]
     });
+  }
+
+  function getRoyalties() public view returns (uint devRoyaltiesPot, uint creatorRoyaltiesPot) {
+    if (gameOver) {
+      devRoyaltiesPot = devRoyalties.amount;
+      creatorRoyaltiesPot = creatorRoyalties.amount;
+    } else {
+      uint totalBips = devRoyalties.feeBips + creatorRoyalties.feeBips;
+      devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
+      creatorRoyaltiesPot = address(this).balance * creatorRoyalties.feeBips / totalBips;
+    }
   }
 
   // Functions - reveal token
@@ -377,7 +333,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     revealed[_params.tokenId] = true;
 
     if (!gameOver) {  
-      _addPlayerPoints(_params.wallet, _params.points);
+      gameStats.addRevealPoints(_params.points);
     }
 
     numRevealed++;
@@ -392,8 +348,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     emit MetadataUpdate(_id);
   }
 
-  // Functions - set default image
-
   // Authoriser
 
   /**
@@ -404,11 +358,10 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     authoriser = _authoriser;
   }
 
-
   // Pool functions 
 
   /**
-   * @dev See {IPoolNFT-getRoyaltyInfo}.
+   * @dev See {IPixel8-getRoyaltyInfo}.
    */
   function getRoyaltyInfo() external view override returns (address receiver, uint256 feeBips) {
     /* will cancel out fee denomination divisor so that we get back the bips */
@@ -416,7 +369,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
   /**
-   * @dev See {IPoolNFT-batchMint}.
+   * @dev See {IPixel8-batchMint}.
    */
   function batchMint(address _to, uint _startId, uint _count) external override onlyPool {
     _safeBatchMint(_to, _startId, _count, "");
@@ -424,7 +377,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
   /**
-   * @dev See {IPoolNFT-batchTransferIds}.
+   * @dev See {IPixel8-batchTransferIds}.
    */
   function batchTransferIds(address _from, address _to, uint[] calldata _tokenIds) external override {
     _safeBatchTransfer(msg.sender, _from, _to, _tokenIds, "");
@@ -434,7 +387,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   }
 
   /**
-    * @dev See {IPoolNFT-batchTransferRange}.
+    * @dev See {IPixel8-batchTransferRange}.
     */
   function batchTransferRange(address _from, address _to, uint _numTokens) external override {
     uint256 firstTransferredId = _safeBatchTransfer(msg.sender, _from, _to, _numTokens, "");
@@ -442,7 +395,6 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
       _updateLastCooldownStartTimeRange(firstTransferredId, _numTokens);
     }
   }
-
 
   /**
    * @dev Force swap a token with another token
@@ -498,60 +450,9 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     lastCooldownStartTime[toTokenId] = block.timestamp;
 
     // Update force swap stats
-    numForceSwaps[from]++;
-    if (numForceSwaps[from] > numForceSwaps[highestNumForceSwaps]) {
-      highestNumForceSwaps = from;
-    }
+    gameStats.recordForceSwap(from);
 
     emit ForceSwapped(fromTokenId, toTokenId);
-  }
-
-  // other
-
-  struct PrizesRoyaltiesWinners {
-    uint prizePoolPot;
-    uint devRoyaltiesPot;
-    uint creatorRoyaltiesPot;
-    address biggestThief;
-    uint biggestThiefPoints;
-    address biggestTrader;
-    uint biggestTraderVolume;
-    address[3] highestScorers;
-    uint[3] highestScores;
-  }
-
-  /**
-   * @dev Get the prizes, royalties and winners.
-   */
-  function getPrizesRoyaltiesWinners() external view returns (PrizesRoyaltiesWinners memory) {
-    uint[3] memory highestScores;
-    for (uint i = 0; i < 3; i++) {
-      highestScores[i] = points[highestPoints[i]];
-    }
-
-    uint devRoyaltiesPot = 0;
-    uint creatorRoyaltiesPot = 0;
-    uint prizePoolPot = 0;
-    
-    if (gameOver) {
-      prizePoolPot = prizePool.pot;
-      devRoyaltiesPot = devRoyalties.amount;
-      creatorRoyaltiesPot = creatorRoyalties.amount;
-    } else {
-      (devRoyaltiesPot, creatorRoyaltiesPot, prizePoolPot) = _calculatePots();
-    }
-
-    return PrizesRoyaltiesWinners({
-      prizePoolPot: prizePoolPot,
-      devRoyaltiesPot: devRoyaltiesPot,
-      creatorRoyaltiesPot: creatorRoyaltiesPot,
-      biggestThief: highestNumForceSwaps,
-      biggestThiefPoints: numForceSwaps[highestNumForceSwaps],
-      biggestTrader: highestTradingVolume,
-      biggestTraderVolume: tradingVolume[highestTradingVolume],
-      highestScorers: highestPoints,
-      highestScores: highestScores
-    });
   }
 
   /**
@@ -560,8 +461,7 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
   function _setGameOver() private {
     gameOver = true;
 
-    (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) = _calculatePots();
-    prizePool.pot = prizePoolPot;
+    (uint devRoyaltiesPot, uint creatorRoyaltiesPot) = getRoyalties();
     devRoyalties.amount = devRoyaltiesPot;
     creatorRoyalties.amount = creatorRoyaltiesPot;
 
@@ -572,73 +472,23 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     payable(devRoyalties.receiver).transfer(devRoyaltiesPot);
     payable(creatorRoyalties.receiver).transfer(creatorRoyaltiesPot);
 
+    // Tell game stats contract that game is over
+    gameStats.setGameOver(address(this).balance);
+
     emit GameOver();
   }
 
   /**
-   * @dev Check how much prize money given wallet can claim.
+   * @dev Pay out prize money to given wallet.
    *
-   * @param _wallet The wallet to check.
+   * @param _wallet The wallet to pay out to.
+   * @param _amount The amount to pay out.
    */
-  function calculatePrize(address _wallet) public view returns (uint) {
-    if (!gameOver) {
-      return 0;
+  function payoutPrize(address _wallet, uint _amount) external {
+    if (msg.sender != gameStats) {
+      revert LibErrors.Unauthorized(msg.sender);
     }
-    
-    uint prize = 0;
-
-    if (highestNumForceSwaps == _wallet) {
-      prize += prizePool.pot * 100 / 1000; // 10%
-    }
-    
-    if (highestTradingVolume == _wallet) {
-      prize += prizePool.pot * 100 / 1000; // 10%
-    }
-
-    for (uint i = 0; i < highestPoints.length; i++) {
-      if (highestPoints[i] == _wallet) {
-        if (i == 0) {
-          prize += prizePool.pot * 450 / 1000; // 45%
-        } else if (i == 1) {
-          prize += prizePool.pot * 250 / 1000; // 25%
-        } else if (i == 2) {
-          prize += prizePool.pot * 100 / 1000; // 10%
-        }
-      }
-    }
-
-    return prize;
-  }
-
-
-  /**
-   * @dev Claim prize money for given wallet.
-   *
-   * @param _wallet The wallet to claim for.
-   */
-  function claimPrize(address _wallet) external {
-    if (!gameOver) {
-      revert LibErrors.GameNotOver();
-    }
-
-    if (prizeClaimed[_wallet]) {
-      revert LibErrors.PrizeAlreadyClaimed(_wallet);
-    }
-
-    prizeClaimed[_wallet] = true;
-
-    payable(_wallet).transfer(calculatePrize(_wallet));
-  }
-
-
-  /**
-   * @dev Calculate the dev royalties and prize pool pots so far based on the current contract balance.
-   */
-  function _calculatePots() private view returns (uint devRoyaltiesPot, uint creatorRoyaltiesPot, uint prizePoolPot) {
-    uint totalBips = devRoyalties.feeBips + creatorRoyalties.feeBips + prizePool.feeBips;
-    devRoyaltiesPot = address(this).balance * devRoyalties.feeBips / totalBips;
-    creatorRoyaltiesPot = address(this).balance * creatorRoyalties.feeBips / totalBips;
-    prizePoolPot = address(this).balance - devRoyaltiesPot - creatorRoyaltiesPot;
+    payable(_wallet).transfer(_amount);
   }
 
   /**
@@ -662,56 +512,17 @@ contract Pixel8 is Ownable, Auth, ERC721, ERC2981, IERC4906, IPixel8 {
     }
   }  
 
-  function _addPlayerPoints(address _wallet, uint _points) private {
-    points[_wallet] += _points;
-
-    // update highest points list
-
-    // first go through list and see if wallet is already a high scorer
-    uint i = 0;
-    while (i < 3) {
-      if (highestPoints[i] == _wallet) {
-        break;
-      }
-      i++;
-    }
-
-    // if not in list but it should be, then add it
-    if (i == 3 && points[highestPoints[2]] < points[_wallet]) {
-      highestPoints[2] = _wallet;
-      i = 2;
-    }
-
-    // now check if it should be in the second position
-    if (i == 2 && points[highestPoints[1]] < points[_wallet]) {
-        address temp = highestPoints[1];
-        highestPoints[1] = highestPoints[2];
-        highestPoints[2] = temp;
-        i = 1;
-    } 
-    
-    // now check if it should be in the first position
-    if (i == 1 && points[highestPoints[0]] < points[_wallet]) {
-        address temp = highestPoints[0];
-        highestPoints[0] = highestPoints[1];
-        highestPoints[1] = temp;
-    }
-  }
 
   // Modifiers
-
-  /**
-   * @dev Only the pool can call this function.
-   */
-  modifier onlyPool() {
-    if (_msgSender() != pool) {
-      revert LibErrors.Unauthorized(_msgSender());
-    }
-    _;
-  }
 
   /**
    * @dev Enable this contract to receive ether.
    */
   receive() external payable {}  
+}
+
+interface IGameStats {
+  function addRevealPoints(uint points) external;
+  function recordForceSwap(address wallet) external;
+  function setGameOver(uint96 feeBips) external;
 }
