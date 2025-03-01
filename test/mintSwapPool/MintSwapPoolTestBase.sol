@@ -28,6 +28,7 @@ abstract contract MintSwapPoolTestBase is TestBase01 {
     vm.startPrank(owner1);
     pool.create(defaultPoolConfig);
     pixel8.setPool(pool_addr);
+    gameStats.setPool(pool_addr);
     vm.stopPrank();
   }
 

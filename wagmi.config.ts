@@ -9,7 +9,8 @@ export default defineConfig({
       include: [
         '**/Pixel8.sol/**/*.json',
         '**/MintSwapPool.sol/**/*.json',
-        '**/Factory.sol/**/*.json'
+        '**/Factory.sol/**/*.json',
+        '**/GameStats.sol/**/*.json'
       ],
     }),
   ],

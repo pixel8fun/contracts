@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { IERC721 } from "openzeppelin/token/ERC721/IERC721.sol";
-
+import { IGameStats } from "./IGameStats.sol";
 /**
  * @dev Pixel8 NFT.
  *
@@ -42,14 +42,7 @@ interface IPixel8 is IERC721 {
   function getRoyaltyInfo() external view returns (address receiver, uint feeBips);
 
   /**
-   * @dev Log trading volume.
-   *
-   * This method is used by the pool to record a trade for a given wallet.
-   *
-   * @param _wallet The address of the wallet.
-   * @param _amount The amount of trading volume.
-   * @param _buyOrSell Whether the trade is a buy or sell.
-   * @param _numItems The number of items traded.
+   * @dev Get the game stats contract.
    */
-  function recordTrade(address _wallet, uint _amount, bool _buyOrSell, uint _numItems) external;
+  function gameStats() external view returns (IGameStats);
 }

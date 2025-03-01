@@ -101,11 +101,11 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee, "received fee");
 
     // check trade volume
-    assertEq(pixel8.tradingVolume(wallet1), q.inputValue, "trade volume");
+    assertEq(gameStats.tradingVolume(pixel8_addr, wallet1), q.inputValue, "trade volume");
   }
 
-  function test_Pool_Buy_Initial_BuyAll() public {
-    BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 11);
+    function test_Pool_Buy_Initial_BuyAll() public {
+      BuyQuote memory q = pool.getBuyQuote(pixel8_addr, 11);
 
     wallet1.transfer(1 ether);
     vm.prank(wallet1);
@@ -136,7 +136,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee, "post: received fee");
 
     // check trade volume
-    assertEq(pixel8.tradingVolume(wallet1), q.inputValue, "post: trade volume");
+    assertEq(gameStats.tradingVolume(pixel8_addr, wallet1), q.inputValue, "post: trade volume");
   }
 
   function test_Pool_Buy_Initial_BuyOne_InsufficientFunds() public {
@@ -231,7 +231,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee * 3, "received fee");
 
     // check trade volume
-    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + _q2.outputValue + q.inputValue, "post: trade volume");
+    assertEq(gameStats.tradingVolume(pixel8_addr, wallet1), _q1.inputValue + _q2.outputValue + q.inputValue, "post: trade volume");
   }
 
   // getSellQuote
@@ -307,7 +307,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee * 2, "received fee");
 
     // check trade volume
-    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
+    assertEq(gameStats.tradingVolume(pixel8_addr, wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
   }
 
   function test_Sell_SellAll() public {
@@ -334,7 +334,7 @@ contract MintSwapPoolTrading is MintSwapPoolTestBase {
     assertEq(pixel8_addr.balance, q.fee * 2, "received fee");
 
     // check trade volume
-    assertEq(pixel8.tradingVolume(wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
+    assertEq(gameStats.tradingVolume(pixel8_addr, wallet1), _q1.inputValue + q.outputValue, "post: trade volume");
   }
 
   function test_Sell_SellNone() public {

@@ -16,20 +16,21 @@ contract Pixel8PrizePool is Pixel8TestBase {
     super.setUp();
 
     vm.startPrank(owner1);
+    gameStats.setPool(pool1);
     pixel8.setPool(pool1);    
     vm.stopPrank();
 
-    payable(pixel8_addr).transfer(0.0006 ether);    
+    payable(pixel8_addr).transfer(0.0006 ether);     // extra money
   }
 
   function test_GetPrizePoolPot_PriorToGameOver_CalculatesBasedOnBalance() public {
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
     uint expectedPrizePool = 0.0006 ether * 1000 / totalBips;
-    uint pot = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+    uint pot = pixel8.getRoyaltiesPrizes().prizePoolPot;
     assertEq(pot, expectedPrizePool, "getPrizePoolPot");
     
     payable(pixel8_addr).transfer(0.0006 ether);    
-    pot = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+    pot = pixel8.getRoyaltiesPrizes().prizePoolPot;
     assertEq(pot, expectedPrizePool * 2, "getPrizePoolPot");
   }
 
@@ -47,9 +48,9 @@ contract Pixel8PrizePool is Pixel8TestBase {
     uint expectedPrizePoolPot = expectedBalance * 1000 / totalBips;
 
     assertEq(pixel8.gameOver(), false, "gameOver");
-    uint pot = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+    uint pot = pixel8.getRoyaltiesPrizes().prizePoolPot;
     assertEq(pot, expectedPrizePoolPot, "prize pool pot still incrementing");
-    assertEq(pixel8.calculatePrize(wallet1), 0, "no prize claimable yet");    
+    assertEq(gameStats.calculatePrize(pixel8_addr, pot, wallet1), 0, "no prize claimable yet");    
   }
 
   function test_ClaimPrize_BeforeGameOver() public {
@@ -65,28 +66,29 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
     uint expectedPrizePoolPot = expectedBalance * 1000 / totalBips;
-    assertEq(pixel8.getPrizesRoyaltiesWinners().prizePoolPot, expectedPrizePoolPot, "prize pool pot");
+    assertEq(pixel8.getRoyaltiesPrizes().prizePoolPot, expectedPrizePoolPot, "prize pool pot");
 
     assertEq(pixel8.gameOver(), false, "gameOver");
 
-    assertEq(pixel8.highestNumForceSwaps(), wallet5);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet5);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 2, "force swaps");
+    assertEq(gameStats.highestNumForceSwaps(pixel8_addr), wallet5);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, wallet5);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThiefPoints, 2, "force swaps");
 
-    assertEq(pixel8.highestTradingVolume(), wallet4); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet4);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
+    assertEq(gameStats.highestTradingVolume(pixel8_addr), wallet4); 
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTrader, wallet4);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTraderVolume, 0.03 ether, "trading volume");
 
-    assertEq(pixel8.highestPoints(0), wallet1);
-    assertEq(pixel8.highestPoints(1), wallet2);
-    assertEq(pixel8.highestPoints(2), wallet3);
+    address[3] memory highestPoints = gameStats.highestPoints(pixel8_addr);
+    assertEq(highestPoints[0], wallet1);
+    assertEq(highestPoints[1], wallet2);
+    assertEq(highestPoints[2], wallet3);
 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 200, "1st points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], wallet2); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 150, "2nd points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], wallet3);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 100, "3rd points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[0], wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[0], 200, "1st points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[1], wallet2); 
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[1], 150, "2nd points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[2], wallet3);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[2], 100, "3rd points");
   }
 
   function test_GameIsOverWhenTileRevealThresholdReached() public {
@@ -96,13 +98,14 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     payable(pixel8_addr).transfer(0.0006 ether);   // extra since game is already over
 
-    uint expectedBalancePriorToGameOver = 0.0006 ether + 0.03 ether;
     uint totalBips = 2500; // 1000 (dev) + 500 (creator) + 1000 (prize pool)
-    uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
-    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot + 0.0006 ether, "balance");
 
-    assertEq(pixel8.gameOver(), true, "gameOver");
-    uint pot = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+    uint expectedBalanceBeforeGameOver = 0.0006 ether + 0.03 ether;
+    uint expectedPrizePoolPot = expectedBalanceBeforeGameOver * 1000 / totalBips;
+    assertEq(address(pixel8_addr).balance, expectedPrizePoolPot + 0.0006 ether, "balance");
+    
+    Pixel8.RoyaltiesPrizes memory prizes = pixel8.getRoyaltiesPrizes();
+    uint pot = prizes.prizePoolPot;
     assertEq(pot, expectedPrizePoolPot, "prize pot unchanged once game over");
   }
 
@@ -111,7 +114,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     assertEq(pixel8.gameOver(), true, "game over");
 
-    assertEq(pixel8.calculatePrize(owner1), 0, "owner1 is not a winner");
+    assertEq(gameStats.calculatePrize(pixel8_addr, 100, owner1), 0, "owner1 is not a winner");
   }
 
   function test_WhenGameIsOver_HaveClaimablePrizes() public {
@@ -124,30 +127,31 @@ contract Pixel8PrizePool is Pixel8TestBase {
     uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
     assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
     
-    assertEq(pixel8.highestNumForceSwaps(), wallet5);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet5);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 2, "force swaps");
-    assertEq(pixel8.calculatePrize(wallet5), expectedPrizePoolPot * 100 / 1000);
+    assertEq(gameStats.highestNumForceSwaps(pixel8_addr), wallet5);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, wallet5);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThiefPoints, 2, "force swaps");
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet5), expectedPrizePoolPot * 100 / 1000);
 
-    assertEq(pixel8.highestTradingVolume(), wallet4); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet4);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
-    assertEq(pixel8.calculatePrize(wallet4), expectedPrizePoolPot * 100 / 1000);
+    assertEq(gameStats.highestTradingVolume(pixel8_addr), wallet4);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTrader, wallet4);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTraderVolume, 0.03 ether, "trading volume");
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet4), expectedPrizePoolPot * 100 / 1000);
 
-    assertEq(pixel8.highestPoints(0), wallet1);
-    assertEq(pixel8.highestPoints(1), wallet2);
-    assertEq(pixel8.highestPoints(2), wallet3);
+    address[3] memory highestPoints = gameStats.highestPoints(pixel8_addr);
+    assertEq(highestPoints[0], wallet1);
+    assertEq(highestPoints[1], wallet2);
+    assertEq(highestPoints[2], wallet3);
 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 250, "1st points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], wallet2); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 150, "2nd points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], wallet3);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 100, "3rd points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[0], wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[0], 250, "1st points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[1], wallet2); 
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[1], 150, "2nd points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[2], wallet3);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[2], 100, "3rd points");
         
-    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * 450 / 1000);
-    assertEq(pixel8.calculatePrize(wallet2), expectedPrizePoolPot * 250 / 1000);
-    assertEq(pixel8.calculatePrize(wallet3), expectedPrizePoolPot * 100 / 1000);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet1), expectedPrizePoolPot * 450 / 1000);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet2), expectedPrizePoolPot * 250 / 1000);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet3), expectedPrizePoolPot * 100 / 1000);
   }
 
   function test_WhenGameIsOver_Wallet1WinsAll_HaveClaimablePrizes() public {
@@ -160,25 +164,26 @@ contract Pixel8PrizePool is Pixel8TestBase {
     uint expectedPrizePoolPot = expectedBalancePriorToGameOver * 1000 / totalBips;
     assertEq(address(pixel8_addr).balance, expectedPrizePoolPot, "balance");
     
-    assertEq(pixel8.highestPoints(0), wallet1);
-    assertEq(pixel8.highestPoints(1), address(0));
-    assertEq(pixel8.highestPoints(2), address(0));
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[0], wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[0], 500, "1st points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[1], address(0)); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[1], 0, "2nd points");
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScorers[2], address(0));
-    assertEq(pixel8.getPrizesRoyaltiesWinners().highestScores[2], 0, "3rd points");
+    address[3] memory highestPoints = gameStats.highestPoints(pixel8_addr);
+    assertEq(highestPoints[0], wallet1);
+    assertEq(highestPoints[1], address(0));
+    assertEq(highestPoints[2], address(0));
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[0], wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[0], 500, "1st points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[1], address(0)); 
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[1], 0, "2nd points");
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScorers[2], address(0));
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).highestScores[2], 0, "3rd points");
 
-    assertEq(pixel8.highestNumForceSwaps(), wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 1, "force swaps");
+    assertEq(gameStats.highestNumForceSwaps(pixel8_addr), wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThiefPoints, 1, "force swaps");
 
-    assertEq(pixel8.highestTradingVolume(), wallet1); 
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTrader, wallet1);
-    assertEq(pixel8.getPrizesRoyaltiesWinners().biggestTraderVolume, 0.03 ether, "trading volume");
+    assertEq(gameStats.highestTradingVolume(pixel8_addr), wallet1); 
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTrader, wallet1);
+    assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestTraderVolume, 0.03 ether, "trading volume");
 
-    assertEq(pixel8.calculatePrize(wallet1), expectedPrizePoolPot * (450 + 100 + 100) / 1000);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet1), expectedPrizePoolPot * (450 + 100 + 100) / 1000);
   }
 
   function test_WhenGameIsOver_CanClaimPrizeOnce() public {
@@ -193,7 +198,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     uint claimableExpected = expectedPrizePoolPot * 450 / 1000;
 
-    assertEq(pixel8.calculatePrize(wallet1), claimableExpected);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet1), claimableExpected);
     assertEq(pixel8.prizeClaimed(wallet1), false);
 
     uint balanceBefore = wallet1.balance;
@@ -201,7 +206,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
     assertEq(wallet1.balance, balanceBefore + claimableExpected);
 
     assertEq(pixel8.prizeClaimed(wallet1), true);
-    assertEq(pixel8.calculatePrize(wallet1), claimableExpected);
+    assertEq(gameStats.calculatePrize(pixel8_addr, expectedPrizePoolPot, wallet1), claimableExpected);
 
     vm.expectRevert(abi.encodeWithSelector(LibErrors.PrizeAlreadyClaimed.selector, wallet1));
     pixel8.claimPrize(wallet1);
@@ -242,9 +247,9 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     // record trade volume
     vm.startPrank(pool1);
-    pixel8.recordTrade(wallet1, 0.01 ether, true, 1);
-    pixel8.recordTrade(wallet4, 0.03 ether, true, 1); // wallet4 is the highest trading volume
-    pixel8.recordTrade(wallet2, 0.02 ether, true, 1);
+    gameStats.recordTrade(pixel8_addr, wallet1, 0.01 ether, true, 1);
+    gameStats.recordTrade(pixel8_addr, wallet4, 0.03 ether, true, 1); // wallet4 is the highest trading volume
+    gameStats.recordTrade(pixel8_addr, wallet2, 0.02 ether, true, 1);
     vm.stopPrank();
 
     assertEq(pixel8.gameOver(), false, "game not yet over");
@@ -267,7 +272,7 @@ contract Pixel8PrizePool is Pixel8TestBase {
 
     // trade volume
     vm.prank(pool1);
-    pixel8.recordTrade(wallet1, 0.03 ether, true, 1);
+    gameStats.recordTrade(pixel8_addr, wallet1, 0.03 ether, true, 1);
 
     // force swaps
     vm.deal(wallet1, 0.01 ether);

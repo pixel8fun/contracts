@@ -46,10 +46,10 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
 
         assertEq(pixel8.ownerOf(ALICE_TOKEN), bob);
         assertEq(pixel8.ownerOf(BOB_TOKEN), alice);
-        assertEq(pixel8.numForceSwaps(alice), 1);
-        assertEq(pixel8.highestNumForceSwaps(), alice);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, alice);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThiefPoints, 1);
+        assertEq(gameStats.numForceSwaps(pixel8_addr, alice), 1);
+        assertEq(gameStats.highestNumForceSwaps(pixel8_addr), alice);
+        assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, alice);
+        assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThiefPoints, 1);
     }
 
     function test_ForceSwap_RevertWhenInsufficientPayment() public {
@@ -115,8 +115,8 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         // Alice does first swap
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, BOB_TOKEN);
-        assertEq(pixel8.highestNumForceSwaps(), alice);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, alice);
+        assertEq(gameStats.highestNumForceSwaps(pixel8_addr), alice);
+        assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, alice);
 
         // Fast forward 1 hour to bypass cooldown
         vm.warp(block.timestamp + pixel8.getForceSwapConfig().cooldownPeriod);
@@ -131,9 +131,9 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.prank(bob);
         pixel8.forceSwap{value: 0.01 ether}(BOB_TOKEN, ALICE_TOKEN);
 
-        assertEq(pixel8.numForceSwaps(bob), 2);
-        assertEq(pixel8.highestNumForceSwaps(), bob);
-        assertEq(pixel8.getPrizesRoyaltiesWinners().biggestThief, bob);
+        assertEq(gameStats.numForceSwaps(pixel8_addr, bob), 2);
+        assertEq(gameStats.highestNumForceSwaps(pixel8_addr), bob);
+        assertEq(gameStats.getPrizesWinners(pixel8_addr).biggestThief, bob);
     }
 
     function test_ForceSwap_CooldownResetAfterSwap() public {
@@ -217,17 +217,17 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     }
 
     function test_ForceSwap_FeeAddedToPrizePool() public {
-        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint initialPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         
         vm.prank(alice);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, BOB_TOKEN);
 
-        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint newPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.01 ether));
     }
 
     function test_ForceSwap_MultipleFeesCumulative() public {
-        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint initialPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         
         // First swap
         vm.prank(alice);
@@ -240,17 +240,17 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
         vm.prank(bob);
         pixel8.forceSwap{value: 0.01 ether}(ALICE_TOKEN, EVE_TOKEN);
 
-        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint newPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.02 ether));
     }
 
     function test_ForceSwap_ExcessFeeAddedToPrizePool() public {
-        uint initialPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint initialPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         
         vm.prank(alice);
         pixel8.forceSwap{value: 0.015 ether}(ALICE_TOKEN, BOB_TOKEN);
 
-        uint newPrizePool = pixel8.getPrizesRoyaltiesWinners().prizePoolPot;
+        uint newPrizePool = pixel8.getRoyaltiesPrizes().prizePoolPot;
         assertEq(newPrizePool, initialPrizePool + _calculateForceSwapFeeMinusDevRoyalties(0.015 ether));
     }
 
@@ -276,7 +276,10 @@ contract Pixel8ForceSwapTest is Pixel8TestBase {
     }
 
     function _calculateForceSwapFeeMinusDevRoyalties(uint256 _amount) internal view returns (uint256) {
-        uint totalBips = pixel8.getDevRoyalties().feeBips + pixel8.getCreatorRoyalties().feeBips + pixel8.getPrizePool().feeBips;
-        return _amount - (_amount * (pixel8.getDevRoyalties().feeBips + pixel8.getCreatorRoyalties().feeBips) / totalBips);
+        uint96 devFeeBips = pixel8.getDevRoyaltyConfig().feeBips;
+        uint96 creatorFeeBips = pixel8.getCreatorRoyaltyConfig().feeBips;
+        uint96 prizePoolFeeBips = pixel8.getPrizePoolFeeBips();
+        uint totalBips = devFeeBips + creatorFeeBips + prizePoolFeeBips;
+        return _amount - (_amount * (devFeeBips + creatorFeeBips) / totalBips);
     }
 } 

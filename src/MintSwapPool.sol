@@ -8,6 +8,8 @@ import { Ownable } from "openzeppelin/access/Ownable.sol";
 import { PoolCurve, PoolStatus, QuoteError, BuyQuote, SellQuote } from "./Common.sol";
 import { ExponentialCurve } from "./ExponentialCurve.sol";
 import { IERC721TokenReceiver } from "./ERC721.sol";
+import { ERC165 } from "openzeppelin/utils/introspection/ERC165.sol";
+import { IGameStats } from "./IGameStats.sol";
 
 /**
  * @dev NFT liquidity pool that both mints and swaps.
@@ -26,12 +28,13 @@ import { IERC721TokenReceiver } from "./ERC721.sol";
  *
  * Mint price follows an exponential bonding curve, meaning price increases by a fixed percentage with each purchase.
  */
-contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintSwapPool {
+contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintSwapPool, ERC165 {
   /**
    * @dev Pool status.
    */
   struct Pool {
     IPixel8 nft;
+    IGameStats stats;
     PoolCurve curve;
     PoolStatus status;
     uint funds;
@@ -48,6 +51,16 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
     poolCreator = _poolCreator;
   }
 
+  // Interface
+
+  function supportsInterface(bytes4 interfaceId) public view override(ERC165) returns (bool) {
+    return type(IMintSwapPool).interfaceId == interfaceId
+      || ERC165.supportsInterface(interfaceId);
+  }
+
+  /**
+   * @dev Set the pool creator.
+   */
   function setPoolCreator(address _poolCreator) public onlyOwner {
     poolCreator = _poolCreator;
   }
@@ -85,8 +98,11 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
       revert LibErrors.PoolAlreadyExists(config.nft);
     }
 
+    IPixel8 pixel8 = IPixel8(config.nft);
+
     Pool memory pool = Pool({
-      nft: IPixel8(config.nft),
+      nft: pixel8,
+      stats: pixel8.gameStats(),
       curve: config.curve,
       status: PoolStatus({
         lastMintId: config.curve.mintStartId - 1,
@@ -242,7 +258,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
     }
 
     // record trade volume
-    pool.nft.recordTrade(sender, quote.inputValue, true, numItems);
+    pool.stats.recordTrade(address(pool.nft), sender, quote.inputValue, true, numItems);
   }
 
   // ---------------------------------------------------------------
@@ -274,7 +290,7 @@ contract MintSwapPool is Ownable, IERC721TokenReceiver, ExponentialCurve, IMintS
     payable(quote.feeReceiver).transfer(quote.fee);
 
     // record trade volume
-    pool.nft.recordTrade(sender, quote.outputValue, false, tokenIds.length);
+    pool.stats.recordTrade(address(pool.nft), sender, quote.outputValue, false, tokenIds.length);
   }
 
   /**
